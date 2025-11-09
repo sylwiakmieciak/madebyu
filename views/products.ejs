@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('partials/navbar') %>
+
+    <main>
+        <section class="products-page">
+            <div class="container">
+                <h1>Wszystkie Produkty</h1>
+        
+        <!-- Filtry -->
+        <div class="filters">
+            <select id="category-filter">
+                <option value="">Wszystkie kategorie</option>
+                <option value="ceramika">Ceramika</option>
+                <option value="bizuteria">Bizuteria</option>
+                <option value="drewno">Drewno</option>
+                <option value="tekstylia">Tekstylia</option>
+            </select>
+            
+            <select id="sort-filter">
+                <option value="newest">Najnowsze</option>
+                <option value="price-low">Cena: od najnizszej</option>
+                <option value="price-high">Cena: od najwyzszej</option>
+                <option value="popular">Najpopularniejsze</option>
+            </select>
+        </div>
+
+        <!-- Lista produktow -->
+        <div class="products-grid">
+            <!-- Te dane pozniej beda z bazy -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&h=600&fit=crop" alt="Wazon ceramiczny">
+                </div>
+                <div class="product-info">
+                    <h3>Wazon ceramiczny z glazura</h3>
+                    <p class="product-price">65.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Jan</p>
+                    <button class="btn btn-small" onclick="addToCart(4)">Dodaj do koszyka</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=600&h=600&fit=crop" alt="Makrama">
+                    <span class="badge">Bestseller</span>
+                </div>
+                <div class="product-info">
+                    <h3>Makrama scienna boho</h3>
+                    <p class="product-price">95.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Maria</p>
+                    <button class="btn btn-small" onclick="addToCart(5)">Dodaj do koszyka</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=600&fit=crop" alt="Naszyjnik">
+                </div>
+                <div class="product-info">
+                    <h3>Naszyjnik z kamieniami naturalnymi</h3>
+                    <p class="product-price">78.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Ola</p>
+                    <button class="btn btn-small" onclick="addToCart(6)">Dodaj do koszyka</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1565183928294-7d22f6518a02?w=600&h=600&fit=crop" alt="Deska">
+                </div>
+                <div class="product-info">
+                    <h3>Deska do serow z orzecha</h3>
+                    <p class="product-price">140.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Piotr</p>
+                    <button class="btn btn-small" onclick="addToCart(7)">Dodaj do koszyka</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=600&h=600&fit=crop" alt="Talerz">
+                    <span class="badge">Nowosc</span>
+                </div>
+                <div class="product-info">
+                    <h3>Zestaw talerzy ceramicznych</h3>
+                    <p class="product-price">180.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Kasia</p>
+                    <button class="btn btn-small" onclick="addToCart(8)">Dodaj do koszyka</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1590736969955-71cc94901144?w=600&h=600&fit=crop" alt="Swieca">
+                </div>
+                <div class="product-info">
+                    <h3>Swiece sojowe w ceramice</h3>
+                    <p class="product-price">42.00 zl</p>
+                    <p class="product-seller">Sprzedawca: Zosia</p>
+                    <button class="btn btn-small" onclick="addToCart(9)">Dodaj do koszyka</button>
+                </div>
+            </div>
+        </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Stopka -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 MadeByU. Wszystkie prawa zastrzezone.</p>
+            <div class="footer-links">
+                <a href="/about">O nas</a>
+                <a href="/contact">Kontakt</a>
+                <a href="/terms">Regulamin</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
