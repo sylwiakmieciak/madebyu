@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* 3 główne kolory - reszta oblicza się automatycznie */
+  --color-primary: #8b6f47;
+  --color-primary-light: #a0826d;
+  --color-primary-dark: #5d4e37;
+  
+  --color-accent: #c9a882;
+  --color-accent-light: #dfd3c3;
+  --color-accent-dark: #b8956f;
+  
+  --color-cream: #f5ebe0;
+  --color-cream-light: #faf7f2;
+  --color-cream-dark: #e8dac5;
+  
+  --font-family-sans: Inter, system-ui, sans-serif;
+  --font-family-serif: 'Playfair Display', Georgia, serif;
+}
+
+body {
+  @apply bg-cream-light text-gray-800 font-sans;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-serif text-primary-dark;
+}
+
+/* Przyciski */
+.btn {
+  @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 inline-block text-center;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:-translate-y-0.5;
+}
+
+.btn-secondary {
+  @apply bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white;
+}
+
+/* Karty */
+.card {
+  @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300;
+}
+
+/* Input */
+.input {
+  @apply w-full px-4 py-3 rounded-lg border-2 border-accent-light focus:border-primary focus:outline-none transition-colors;
+}
+
