@@ -76,9 +76,77 @@ export default function Dashboard({ user }) {
   };
 
   const applyTheme = (theme) => {
-    document.documentElement.style.setProperty('--primary-color', theme.primary_color);
-    document.documentElement.style.setProperty('--secondary-color', theme.secondary_color);
-    document.documentElement.style.setProperty('--accent-color', theme.accent_color);
+    const root = document.documentElement;
+    
+    // Bazowe 3 kolory
+    root.style.setProperty('--primary-color', theme.primary_color);
+    root.style.setProperty('--secondary-color', theme.secondary_color);
+    root.style.setProperty('--accent-color', theme.accent_color);
+    
+    // Wyliczone kolory ciemniejsze/jaśniejsze
+    root.style.setProperty('--primary-dark', adjustColor(theme.primary_color, -20));
+    root.style.setProperty('--primary-light', adjustColor(theme.primary_color, 40));
+    root.style.setProperty('--secondary-dark', adjustColor(theme.secondary_color, -15));
+    root.style.setProperty('--accent-light', adjustColor(theme.accent_color, 30));
+    
+    // Tła
+    root.style.setProperty('--bg-cream', adjustColor(theme.accent_color, 70, 0.3)); // Bardzo jasny accent
+    root.style.setProperty('--bg-light', adjustColor(theme.accent_color, 85, 0.2)); // Jeszcze jaśniejszy
+    
+    // Teksty
+    root.style.setProperty('--text-color', adjustColor(theme.primary_color, -40));
+    root.style.setProperty('--text-light', adjustColor(theme.secondary_color, 0));
+    
+    // Obramowania
+    root.style.setProperty('--border-color', adjustColor(theme.accent_color, 20));
+    
+    // Cienie
+    const shadowColor = hexToRgb(theme.primary_color);
+    root.style.setProperty('--shadow-soft', `rgba(${shadowColor.r}, ${shadowColor.g}, ${shadowColor.b}, 0.08)`);
+    
+    // Gradienty
+    root.style.setProperty('--theme-gradient-primary', `linear-gradient(135deg, ${theme.primary_color}, ${adjustColor(theme.primary_color, -20)})`);
+    
+    // Wymuś repaint przez toggle klasy
+    document.body.classList.remove('theme-update');
+    void document.body.offsetHeight; // Force reflow
+    document.body.classList.add('theme-update');
+  };
+
+  // Funkcje pomocnicze do modyfikacji kolorów
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
+  };
+
+  const rgbToHex = (r, g, b) => {
+    return "#" + [r, g, b].map(x => {
+      const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    }).join('');
+  };
+
+  const adjustColor = (hex, amount, saturationFactor = 1) => {
+    const rgb = hexToRgb(hex);
+    
+    // Regulacja jasności
+    let r = rgb.r + amount;
+    let g = rgb.g + amount;
+    let b = rgb.b + amount;
+    
+    // Regulacja saturacji (dla tła)
+    if (saturationFactor < 1) {
+      const gray = (r + g + b) / 3;
+      r = gray + (r - gray) * saturationFactor;
+      g = gray + (g - gray) * saturationFactor;
+      b = gray + (b - gray) * saturationFactor;
+    }
+    
+    return rgbToHex(r, g, b);
   };
 
   const createTheme = async (e) => {
@@ -151,10 +219,6 @@ export default function Dashboard({ user }) {
 
   return (
     <div className="container" style={{ padding: '3rem 1rem' }}>
-      <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '2rem', color: 'var(--text-color)' }}>
-        Witaj, {user.username}!
-      </h1>
-
       {/* Tabs */}
       <div className="dashboard-tabs">
         <button

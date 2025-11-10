@@ -1,11 +1,14 @@
 /* DOKŁADNIE SKOPIOWANE STYLE Z ORYGINALNEJ WERSJI */
 
-/* Variables */
+/* Variables - te same co w style.css, będą nadpisywane przez JavaScript */
 :root {
   --primary-color: #8b6f47;
   --secondary-color: #a0826d;
   --accent-color: #c9a882;
-  --dark-brown: #5d4e37;
+  --primary-dark: #5d4e37;
+  --primary-light: #b39b73;
+  --secondary-dark: #8b7d6b;
+  --accent-light: #e4d4c0;
   --text-color: #3e3530;
   --text-light: #8b7d6b;
   --bg-cream: #f5ebe0;
@@ -13,11 +16,13 @@
   --border-color: #dfd3c3;
   --success-color: #7d8f69;
   --danger-color: #c97064;
+  --white: #ffffff;
+  --shadow-soft: rgba(93, 78, 55, 0.08);
   --radius-sm: 8px;
   --radius-md: 16px;
   --font-heading: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
-  --theme-gradient-primary: linear-gradient(135deg, #8b6f47, #5d4e37);
+  --theme-gradient-primary: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
 }
 
 /* Auth page layout */
@@ -27,7 +32,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 0;
-  background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-cream) 100%);
+  background-image: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-cream) 100%);
 }
 
 .auth-container {
@@ -58,7 +63,7 @@
 .auth-header h1 {
   font-family: var(--font-heading);
   font-size: 2rem;
-  color: var(--dark-brown);
+  color: var(--primary-dark);
   margin-bottom: 0.5rem;
 }
 
@@ -298,7 +303,7 @@
 
 /* Visual section */
 .auth-visual-section {
-  background: linear-gradient(135deg, var(--primary-color), var(--dark-brown));
+  background-image: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   padding: 3rem;
   display: flex;
   align-items: center;
@@ -420,3 +425,5 @@
     font-size: 2rem;
   }
 }
+
+

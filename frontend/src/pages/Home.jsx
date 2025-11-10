@@ -9,20 +9,8 @@ export default function Home() {
 
   return (
     <main>
-      {/* Sekcja Hero */}
-      <section className="hero">
-        <div className="container">
-          <h1>Witaj w MadeByU</h1>
-          <p className="hero-subtitle">Marketplace unikalnych rękodzieł od polskich twórców</p>
-          <div className="hero-buttons">
-            <Link to="/products" className="btn btn-primary">Przeglądaj Produkty</Link>
-            <Link to="/sell" className="btn btn-secondary">Zacznij Sprzedawać</Link>
-          </div>
-        </div>
-      </section>
-
       {/* Wyróżniające się produkty */}
-      <section className="featured-products">
+      <section className="featured-products" style={{ paddingTop: '4rem' }}>
         <div className="container">
           <h2>Wybór Redakcji</h2>
           <div className="products-grid">
