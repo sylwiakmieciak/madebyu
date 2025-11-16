@@ -32,24 +32,48 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Sprawdź czy user istnieje
+      // Sprawdź czy user istnieje po google_id
       let user = await User.findOne({ where: { google_id: profile.id } });
 
       if (!user) {
-        // Stwórz nowego użytkownika
-        user = await User.create({
-          google_id: profile.id,
-          email: profile.emails[0].value,
-          username: profile.emails[0].value.split('@')[0] + '_' + Date.now(),
-          full_name: profile.displayName,
-          avatar_url: profile.photos[0]?.value,
-          oauth_provider: 'google',
-          email_verified: true
-        });
+        // Jeśli nie ma google_id, sprawdź po email (może być użytkownik lokalny)
+        const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+        
+        if (!email) {
+          return done(new Error('No email provided by Google'), null);
+        }
+
+        user = await User.findOne({ where: { email } });
+
+        if (user) {
+          // Użytkownik istnieje lokalnie - połącz konto z Google
+          await user.update({
+            google_id: profile.id,
+            oauth_provider: 'google',
+            email_verified: true,
+            avatar_url: profile.photos && profile.photos[0] ? profile.photos[0].value : user.avatar_url,
+            full_name: user.full_name || profile.displayName
+          });
+        } else {
+          // Stwórz nowego użytkownika
+          const username = profile.emails[0].value.split('@')[0] + '_' + Date.now();
+          
+          user = await User.create({
+            google_id: profile.id,
+            email: email,
+            username: username,
+            password: null, // OAuth users don't have password
+            full_name: profile.displayName,
+            avatar_url: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+            oauth_provider: 'google',
+            email_verified: true
+          });
+        }
       }
 
       return done(null, user);
     } catch (error) {
+      console.error('Google OAuth error:', error);
       return done(error, null);
     }
   }));
@@ -66,7 +90,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Sprawdź czy user istnieje
+      // Sprawdź czy user istnieje po github_id
       let user = await User.findOne({ where: { github_id: profile.id } });
 
       if (!user) {
@@ -75,20 +99,38 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
           ? profile.emails[0].value 
           : `${profile.username}@github.com`;
 
-        // Stwórz nowego użytkownika
-        user = await User.create({
-          github_id: profile.id,
-          email: email,
-          username: profile.username || profile.displayName.replace(/\s+/g, '_').toLowerCase(),
-          full_name: profile.displayName,
-          avatar_url: profile.photos[0]?.value,
-          oauth_provider: 'github',
-          email_verified: true
-        });
+        // Sprawdź czy użytkownik istnieje lokalnie po email
+        user = await User.findOne({ where: { email } });
+
+        if (user) {
+          // Użytkownik istnieje lokalnie - połącz konto z GitHub
+          await user.update({
+            github_id: profile.id,
+            oauth_provider: 'github',
+            email_verified: true,
+            avatar_url: profile.photos && profile.photos[0] ? profile.photos[0].value : user.avatar_url,
+            full_name: user.full_name || profile.displayName
+          });
+        } else {
+          // Stwórz nowego użytkownika
+          const username = (profile.username || profile.displayName.replace(/\s+/g, '_').toLowerCase()) + '_' + Date.now();
+          
+          user = await User.create({
+            github_id: profile.id,
+            email: email,
+            username: username,
+            password: null, // OAuth users don't have password
+            full_name: profile.displayName,
+            avatar_url: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+            oauth_provider: 'github',
+            email_verified: true
+          });
+        }
       }
 
       return done(null, user);
     } catch (error) {
+      console.error('GitHub OAuth error:', error);
       return done(error, null);
     }
   }));

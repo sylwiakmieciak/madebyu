@@ -12,7 +12,7 @@ export default function AuthCallback({ setUser }) {
       // Zapisz token
       localStorage.setItem('token', token);
       
-      // Pobierz dane użytkownika
+      // Pobierz dane uzytkownika
       fetch('http://localhost:3001/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -20,7 +20,9 @@ export default function AuthCallback({ setUser }) {
         .then(data => {
           if (data.user) {
             setUser(data.user);
-            navigate('/dashboard');
+            
+            // Przeladuj strone zeby zaladowac motyw uzytkownika
+            window.location.href = '/dashboard';
           } else {
             navigate('/login');
           }

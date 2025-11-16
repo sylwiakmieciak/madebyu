@@ -4,7 +4,11 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-require('dotenv').config();
+const path = require('path');
+
+// Load .env from server directory
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const { syncDatabase } = require('./models');
 const passport = require('./config/passport');
 
@@ -15,7 +19,7 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARE
 // ============================================
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 app.use(express.json());
@@ -87,9 +91,9 @@ app.use((err, req, res, next) => {
 app.listen(PORT, async () => {
   console.log(`
 ╔════════════════════════════════════════╗
-║   🚀 MadeByU Backend Server           ║
-║   📍 http://localhost:${PORT}         ║
-║   🔥 Ready to accept requests         ║
+║   MadeByU Backend Server              ║
+║   http://localhost:${PORT}            ║
+║   Ready to accept requests            ║
 ╚════════════════════════════════════════╝
   `);
 

@@ -149,17 +149,35 @@ router.get('/google',
 );
 
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/login' }),
+  passport.authenticate('google', { 
+    failureRedirect: 'http://localhost:5173/login?error=google_auth_failed',
+    session: true 
+  }),
   (req, res) => {
-    // Sukces - stwórz JWT token
-    const token = jwt.sign(
-      { id: req.user.id, email: req.user.email, username: req.user.username, role: req.user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    try {
+      // Sprawdź czy użytkownik jest zalogowany
+      if (!req.user) {
+        return res.redirect('http://localhost:5173/login?error=no_user');
+      }
 
-    // Redirect do frontendu z tokenem
-    res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
+      // Sukces - stwórz JWT token
+      const token = jwt.sign(
+        { 
+          id: req.user.id, 
+          email: req.user.email, 
+          username: req.user.username, 
+          role: req.user.role 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Redirect do frontendu z tokenem
+      res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect('http://localhost:5173/login?error=token_generation_failed');
+    }
   }
 );
 
@@ -171,17 +189,35 @@ router.get('/github',
 );
 
 router.get('/github/callback',
-  passport.authenticate('github', { failureRedirect: 'http://localhost:5173/login' }),
+  passport.authenticate('github', { 
+    failureRedirect: 'http://localhost:5173/login?error=github_auth_failed',
+    session: true 
+  }),
   (req, res) => {
-    // Sukces - stwórz JWT token
-    const token = jwt.sign(
-      { id: req.user.id, email: req.user.email, username: req.user.username, role: req.user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    try {
+      // Sprawdź czy użytkownik jest zalogowany
+      if (!req.user) {
+        return res.redirect('http://localhost:5173/login?error=no_user');
+      }
 
-    // Redirect do frontendu z tokenem
-    res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
+      // Sukces - stwórz JWT token
+      const token = jwt.sign(
+        { 
+          id: req.user.id, 
+          email: req.user.email, 
+          username: req.user.username, 
+          role: req.user.role 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Redirect do frontendu z tokenem
+      res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
+    } catch (error) {
+      console.error('GitHub callback error:', error);
+      res.redirect('http://localhost:5173/login?error=token_generation_failed');
+    }
   }
 );
 

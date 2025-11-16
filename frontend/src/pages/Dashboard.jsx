@@ -151,8 +151,13 @@ export default function Dashboard({ user }) {
 
   const createTheme = async (e) => {
     e.preventDefault();
+    console.log('=== CREATE THEME (Frontend) ===');
+    console.log('Theme data:', newTheme);
+    
     try {
       const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      
       const response = await fetch('http://localhost:3001/api/themes', {
         method: 'POST',
         headers: {
@@ -162,7 +167,12 @@ export default function Dashboard({ user }) {
         body: JSON.stringify(newTheme)
       });
 
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
       if (response.ok) {
+        console.log('[OK] Theme created successfully');
         await loadThemes();
         setNewTheme({
           name: '',
@@ -170,25 +180,45 @@ export default function Dashboard({ user }) {
           secondary_color: '#a0826d',
           accent_color: '#c9a882'
         });
+      } else {
+        console.error('[ERROR] Failed:', data);
       }
     } catch (error) {
-      console.error('Failed to create theme:', error);
+      console.error('[ERROR] Create theme error:', error);
     }
   };
 
   const setDefaultTheme = async (themeId) => {
+    console.log('=== SET DEFAULT THEME (Frontend) ===');
+    console.log('Theme ID:', themeId);
+    
     try {
       const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      
       const response = await fetch(`http://localhost:3001/api/themes/${themeId}/default`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
       if (response.ok) {
+        console.log('[OK] Default theme set successfully');
+        
+        // Przeladuj liste motywow (zaktualizuje badge "Domyslny")
         await loadThemes();
+        
+        // NIE zmieniaj motywu uzytkownika - pozostaw jego osobisty wybor
+        // Admin ma swoj wybrany motyw, zmiana domyslnego nie powinna go dotyczyc
+        
+      } else {
+        console.error('[ERROR] Failed:', data);
       }
     } catch (error) {
-      console.error('Failed to set default theme:', error);
+      console.error('[ERROR] Set default theme error:', error);
     }
   };
 

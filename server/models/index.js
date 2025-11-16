@@ -61,9 +61,9 @@ Theme.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 const syncDatabase = async (force = false) => {
   try {
     await sequelize.sync({ force }); // force: true = DROP & CREATE
-    console.log('✅ Database synchronized');
+    console.log('[OK] Database synchronized');
     
-    // Zawsze sprawdź czy są podstawowe dane
+    // Zawsze sprawdz czy sa podstawowe dane
     await seedCategories();
     await seedThemes();
     
@@ -72,7 +72,7 @@ const syncDatabase = async (force = false) => {
       await seedAdmin();
     }
   } catch (error) {
-    console.error('❌ Database sync failed:', error);
+    console.error('[ERROR] Database sync failed:', error);
   }
 };
 
@@ -92,9 +92,9 @@ const seedCategories = async () => {
     ];
 
     await Category.bulkCreate(categories);
-    console.log('✅ Categories seeded');
+    console.log('[OK] Categories seeded');
   } catch (error) {
-    console.error('❌ Seed categories failed:', error);
+    console.error('[ERROR] Seed categories failed:', error);
   }
 };
 
@@ -137,9 +137,9 @@ const seedThemes = async () => {
     ];
 
     await Theme.bulkCreate(themes);
-    console.log('✅ Themes seeded');
+    console.log('[OK] Themes seeded');
   } catch (error) {
-    console.error('❌ Seed themes failed:', error);
+    console.error('[ERROR] Seed themes failed:', error);
   }
 };
 
@@ -160,9 +160,9 @@ const seedAdmin = async () => {
       email_verified: true
     });
 
-    console.log('✅ Admin user created (admin@madebyu.pl / admin123)');
+    console.log('[OK] Admin user created (admin@madebyu.pl / admin123)');
   } catch (error) {
-    console.error('❌ Seed admin failed:', error);
+    console.error('[ERROR] Seed admin failed:', error);
   }
 };
 

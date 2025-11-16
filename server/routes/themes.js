@@ -29,20 +29,27 @@ router.get('/', async (req, res) => {
 // POST /api/themes - Stwórz nowy motyw (ADMIN)
 // ============================================
 router.post('/', authMiddleware, requireAdmin, async (req, res) => {
+  console.log('=== CREATE THEME REQUEST ===');
+  console.log('User:', req.user);
+  console.log('Body:', req.body);
+  
   try {
     const { name, primary_color, secondary_color, accent_color } = req.body;
 
     if (!name || !primary_color || !secondary_color || !accent_color) {
+      console.log('[ERROR] Missing fields');
       return res.status(400).json({ error: 'All fields required' });
     }
 
     // Walidacja kolorów (hex)
     const hexRegex = /^#[0-9A-F]{6}$/i;
     if (!hexRegex.test(primary_color) || !hexRegex.test(secondary_color) || !hexRegex.test(accent_color)) {
+      console.log('[ERROR] Invalid color format');
       return res.status(400).json({ error: 'Invalid color format. Use #RRGGBB' });
     }
 
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    console.log('Creating theme with slug:', slug);
 
     const theme = await Theme.create({
       name,
@@ -53,9 +60,10 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
       created_by: req.user.id
     });
 
+    console.log('[OK] Theme created:', theme.id);
     res.status(201).json({ message: 'Theme created', theme });
   } catch (error) {
-    console.error('Create theme error:', error);
+    console.error('❌ Create theme error:', error);
     res.status(500).json({ error: 'Failed to create theme' });
   }
 });
@@ -64,24 +72,31 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
 // PUT /api/themes/:id/default - Ustaw jako domyślny (ADMIN)
 // ============================================
 router.put('/:id/default', authMiddleware, requireAdmin, async (req, res) => {
+  console.log('=== SET DEFAULT THEME REQUEST ===');
+  console.log('Theme ID:', req.params.id);
+  console.log('User:', req.user);
+  
   try {
     const { id } = req.params;
 
     // Usuń is_default ze wszystkich
     await Theme.update({ is_default: false }, { where: {} });
+    console.log('[OK] Removed default from all themes');
 
     // Ustaw nowy default
     const theme = await Theme.findByPk(id);
     if (!theme) {
+      console.log('[ERROR] Theme not found');
       return res.status(404).json({ error: 'Theme not found' });
     }
 
     theme.is_default = true;
     await theme.save();
+    console.log('[OK] Set theme as default:', theme.name);
 
     res.json({ message: 'Default theme updated', theme });
   } catch (error) {
-    console.error('Set default theme error:', error);
+    console.error('❌ Set default theme error:', error);
     res.status(500).json({ error: 'Failed to set default theme' });
   }
 });

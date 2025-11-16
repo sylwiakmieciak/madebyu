@@ -14,7 +14,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sprawdź czy user jest zalogowany przy starcie
+  // Sprawdz czy user jest zalogowany przy starcie
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
@@ -23,18 +23,38 @@ function App() {
           const data = await authAPI.getMe();
           setUser(data.user);
           
-          // Załaduj i zastosuj motyw użytkownika
-          loadUserTheme(token);
+          // Zaladuj i zastosuj motyw uzytkownika
+          await loadUserTheme(token);
         } catch (error) {
-          // Token nieważny - usuń
+          // Token niewazny - usun
           localStorage.removeItem('token');
+          // Zaladuj domyslny motyw dla niezalogowanych
+          await loadDefaultTheme();
         }
+      } else {
+        // Uzytkownik niezalogowany - zaladuj domyslny motyw
+        await loadDefaultTheme();
       }
       setLoading(false);
     };
 
     checkAuth();
   }, []);
+
+  const loadDefaultTheme = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/themes');
+      const data = await response.json();
+      
+      // Znajdz motyw domyslny
+      const defaultTheme = data.themes.find(t => t.is_default);
+      if (defaultTheme) {
+        applyTheme(defaultTheme);
+      }
+    } catch (error) {
+      console.error('Failed to load default theme:', error);
+    }
+  };
 
   const loadUserTheme = async (token) => {
     try {
@@ -124,9 +144,13 @@ function App() {
     return rgbToHex(r, g, b);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     authAPI.logout();
     setUser(null);
+    
+    // Zaladuj domyslny motyw po wylogowaniu
+    await loadDefaultTheme();
+    
     window.location.href = '/';
   };
 

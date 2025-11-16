@@ -2,7 +2,10 @@
 // SEQUELIZE CONFIG - ORM Database Connection
 // ============================================
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const path = require('path');
+
+// Load .env from server directory
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'madebyu',
@@ -24,10 +27,10 @@ const sequelize = new Sequelize(
 // Test connection
 sequelize.authenticate()
   .then(() => {
-    console.log('✅ Database connected successfully (Sequelize)');
+    console.log('[OK] Database connected successfully (Sequelize)');
   })
   .catch(err => {
-    console.error('❌ Database connection failed:', err.message);
+    console.error('[ERROR] Database connection failed:', err.message);
   });
 
 module.exports = sequelize;
