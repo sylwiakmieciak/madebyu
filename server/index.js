@@ -40,6 +40,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
@@ -53,11 +56,17 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const themeRoutes = require('./routes/themes');
+const galleryRoutes = require('./routes/gallery');
+const orderRoutes = require('./routes/orders');
+const notificationRoutes = require('./routes/notifications');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/themes', themeRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ============================================
 // HEALTH CHECK
@@ -100,4 +109,18 @@ app.listen(PORT, async () => {
   // Synchronize database (force: true = DROP & RECREATE)
   // Change to false after first run to keep data
   await syncDatabase(false); // false = nie kasuj danych przy restarcie
+  
+  // Dodaj kolumnę order_id do notifications jeśli nie istnieje
+  try {
+    await sequelize.query(`
+      ALTER TABLE notifications 
+      ADD COLUMN IF NOT EXISTS order_id INT NULL,
+      ADD CONSTRAINT fk_notifications_order 
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
+    `);
+    console.log('[OK] Notifications table updated');
+  } catch (error) {
+    // Kolumna już istnieje
+    console.log('[INFO] Notifications table already up to date');
+  }
 });

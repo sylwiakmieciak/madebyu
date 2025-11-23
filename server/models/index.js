@@ -10,6 +10,8 @@ const Order = require('./Order');
 const OrderItem = require('./OrderItem');
 const Theme = require('./Theme');
 const UserTheme = require('./UserTheme');
+const Gallery = require('./Gallery');
+const Notification = require('./Notification');
 
 // ============================================
 // RELATIONSHIPS - Relacje między modelami
@@ -48,12 +50,24 @@ Theme.hasMany(UserTheme, { foreignKey: 'theme_id', as: 'userThemes' });
 UserTheme.belongsTo(Theme, { foreignKey: 'theme_id', as: 'theme' });
 
 // User -> UserTheme (1:1)
-User.hasOne(UserTheme, { foreignKey: 'user_id', as: 'selectedTheme' });
+User.hasOne(UserTheme, { foreignKey: 'user_id', as: 'activeTheme' });
 UserTheme.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User -> Gallery (1:N)
+User.hasMany(Gallery, { foreignKey: 'user_id', as: 'gallery' });
+Gallery.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // User (creator) -> Themes (1:N)
 User.hasMany(Theme, { foreignKey: 'created_by', as: 'createdThemes' });
 Theme.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// User -> Notifications (1:N)
+User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Order -> Notifications (1:N)
+Order.hasMany(Notification, { foreignKey: 'order_id', as: 'notifications' });
+Notification.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 
 // ============================================
 // SYNC DATABASE - Synchronizacja z bazą
@@ -104,7 +118,23 @@ const seedCategories = async () => {
 const seedThemes = async () => {
   try {
     const count = await Theme.count();
-    if (count > 0) return; // Już są motywy
+    if (count > 0) {
+      // Sprawdź czy jest motyw świąteczny
+      const christmasTheme = await Theme.findOne({ where: { slug: 'christmas' } });
+      if (!christmasTheme) {
+        await Theme.create({
+          name: 'Świąteczny',
+          slug: 'christmas',
+          primary_color: '#c41e3a',
+          secondary_color: '#165b33',
+          accent_color: '#ffd700',
+          is_default: false,
+          is_active: true
+        });
+        console.log('[OK] Christmas theme added');
+      }
+      return; // Już są motywy
+    }
 
     const themes = [
       {
@@ -131,6 +161,15 @@ const seedThemes = async () => {
         primary_color: '#3d5a3c',
         secondary_color: '#527d50',
         accent_color: '#79a677',
+        is_default: false,
+        is_active: true
+      },
+      {
+        name: 'Świąteczny',
+        slug: 'christmas',
+        primary_color: '#c41e3a',
+        secondary_color: '#165b33',
+        accent_color: '#ffd700',
         is_default: false,
         is_active: true
       }
@@ -176,5 +215,7 @@ module.exports = {
   OrderItem,
   Theme,
   UserTheme,
+  Gallery,
+  Notification,
   syncDatabase
 };

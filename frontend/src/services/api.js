@@ -132,9 +132,40 @@ export const ordersAPI = {
   },
 };
 
+// ============================================
+// GENERIC API METHODS
+// ============================================
+export const api = {
+  get: async (endpoint, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`${endpoint}${queryString ? `?${queryString}` : ''}`);
+  },
+  
+  post: async (endpoint, data) => {
+    return apiCall(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  
+  put: async (endpoint, data) => {
+    return apiCall(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  
+  delete: async (endpoint) => {
+    return apiCall(endpoint, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   products: productsAPI,
   categories: categoriesAPI,
   orders: ordersAPI,
+  ...api
 };

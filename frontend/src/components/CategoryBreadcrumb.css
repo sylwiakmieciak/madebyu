@@ -1,0 +1,168 @@
+.category-breadcrumb {
+  margin-bottom: 2rem;
+}
+
+.category-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.breadcrumb-path {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+}
+
+.breadcrumb-item {
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.breadcrumb-item.clickable {
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.breadcrumb-item.clickable:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: var(--text-light);
+  margin: 0 0.25rem;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.category-tile {
+  padding: 1rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.category-tile.has-children {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+}
+
+.category-tile.has-children:hover {
+  border-color: var(--primary-dark);
+  background: linear-gradient(135deg, var(--bg-light) 0%, #e8e8e8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-tile.is-final {
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, #fff 0%, color-mix(in srgb, var(--success-color) 15%, white) 100%);
+}
+
+.category-tile.is-final:hover {
+  border-color: color-mix(in srgb, var(--success-color) 120%, black);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success-color) 10%, white) 0%, color-mix(in srgb, var(--success-color) 25%, white) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--success-color) 30%, transparent);
+}
+
+.category-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary-dark);
+  transition: all var(--transition-fast) ease;
+}
+
+.category-tile.has-children .category-name {
+  color: var(--primary-color);
+}
+
+.category-tile.is-final .category-name {
+  color: color-mix(in srgb, var(--success-color) 120%, black);
+}
+
+.category-tile:hover .category-name {
+  font-weight: 600;
+}
+
+.arrow-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  transition: transform var(--transition-fast) ease;
+}
+
+.category-tile.has-children:hover .arrow-icon {
+  transform: translateX(4px);
+  color: var(--primary-dark);
+}
+
+/* Wybrana kategoria */
+.category-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success-color) 10%, white) 0%, color-mix(in srgb, var(--success-color) 25%, white) 100%);
+  border: 2px solid var(--success-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+}
+
+.selected-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selected-label {
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--success-color) 120%, black);
+  font-weight: 500;
+}
+
+.selected-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--success-color) 140%, black);
+}
+
+.change-category-btn {
+  padding: 0.5rem 1.25rem;
+  background: white;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  font-size: 0.9rem;
+}
+
+.change-category-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-soft);
+}

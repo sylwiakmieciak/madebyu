@@ -2,17 +2,24 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { authAPI } from './services/api';
 import Navbar from './components/Navbar';
+import ChristmasDecorations from './components/ChristmasDecorations';
 import Home from './pages/Home';
 import Products from './pages/Products';
+import ProductDetails from './pages/ProductDetails';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import AddProduct from './pages/AddProduct';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Notifications from './pages/Notifications';
 import AuthCallback from './pages/AuthCallback';
 import './style.css';
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isChristmasTheme, setIsChristmasTheme] = useState(false);
 
   // Sprawdz czy user jest zalogowany przy starcie
   useEffect(() => {
@@ -39,6 +46,18 @@ function App() {
     };
 
     checkAuth();
+    
+    // Nasłuchuj zmian motywu z Dashboard
+    const handleThemeChange = (event) => {
+      const isChristmas = event.detail.isChristmas;
+      setIsChristmasTheme(isChristmas);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+    };
   }, []);
 
   const loadDefaultTheme = async () => {
@@ -72,6 +91,11 @@ function App() {
 
   const applyTheme = (theme) => {
     const root = document.documentElement;
+    
+    // Sprawdź czy to motyw świąteczny
+    const isChristmas = theme.name?.toLowerCase().includes('świąteczny') || 
+                       theme.name?.toLowerCase().includes('christmas');
+    setIsChristmasTheme(isChristmas);
     
     // Bazowe 3 kolory
     root.style.setProperty('--primary-color', theme.primary_color);
@@ -161,14 +185,20 @@ function App() {
   return (
     <BrowserRouter>
       <div>
+        {isChristmasTheme && <ChristmasDecorations />}
         <Navbar user={user} onLogout={handleLogout} />
         
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/products" element={<Products />} />
+          <Route path="/products" element={<Products user={user} />} />
+          <Route path="/product/:id" element={<ProductDetails user={user} />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
           <Route path="/dashboard" element={<Dashboard user={user} />} />
+          <Route path="/add-product" element={<AddProduct user={user} />} />
           <Route path="/auth/callback" element={<AuthCallback setUser={setUser} />} />
         </Routes>
 

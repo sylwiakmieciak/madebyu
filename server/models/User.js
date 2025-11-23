@@ -39,6 +39,11 @@ const User = sequelize.define('User', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  greeting: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    defaultValue: 'Witaj na moim profilu! 👋'
+  },
   role: {
     type: DataTypes.ENUM('user', 'moderator', 'admin'),
     defaultValue: 'user'
