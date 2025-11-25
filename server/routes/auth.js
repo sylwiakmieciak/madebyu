@@ -160,7 +160,11 @@ router.post('/login', async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'username', 'email', 'role', 'full_name', 'avatar_url', 'bio', 'greeting', 'created_at']
+      attributes: [
+        'id', 'username', 'email', 'role', 'full_name', 'avatar_url', 'bio', 'greeting', 
+        'can_moderate_products', 'can_moderate_comments', 'can_manage_themes',
+        'created_at'
+      ]
     });
 
     if (!user) {
@@ -172,6 +176,27 @@ router.get('/me', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user data' });
+  }
+});
+
+// ============================================
+// GET /api/auth/user/:userId - Pobierz publiczny profil użytkownika
+// ============================================
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.userId, {
+      attributes: ['id', 'username', 'full_name', 'avatar_url', 'bio', 'greeting', 'created_at']
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user });
+
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({ error: 'Failed to get user profile' });
   }
 });
 

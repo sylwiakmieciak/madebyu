@@ -13,6 +13,7 @@ import AddProduct from './pages/AddProduct';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Notifications from './pages/Notifications';
+import UserProfile from './pages/UserProfile';
 import AuthCallback from './pages/AuthCallback';
 import './style.css';
 
@@ -178,6 +179,18 @@ function App() {
     window.location.href = '/';
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const data = await authAPI.getMe();
+        setUser(data.user);
+      } catch (error) {
+        console.error('Failed to refresh user:', error);
+      }
+    }
+  };
+
   if (loading) {
     return <div>Ładowanie...</div>;
   }
@@ -195,9 +208,10 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/user/:userId" element={<UserProfile />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
-          <Route path="/dashboard" element={<Dashboard user={user} />} />
+          <Route path="/dashboard" element={<Dashboard user={user} refreshUser={refreshUser} />} />
           <Route path="/add-product" element={<AddProduct user={user} />} />
           <Route path="/auth/callback" element={<AuthCallback setUser={setUser} />} />
         </Routes>

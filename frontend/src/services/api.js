@@ -19,17 +19,41 @@ const apiCall = async (endpoint, options = {}) => {
     },
   };
 
+  console.log('API Call:', {
+    endpoint: `${API_URL}${endpoint}`,
+    method: config.method || 'GET',
+    hasToken: !!token,
+    body: options.body
+  });
+
   try {
     const response = await fetch(`${API_URL}${endpoint}`, config);
-    const data = await response.json();
+    console.log('API Response status:', response.status, response.statusText);
+    
+    const contentType = response.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.error('Non-JSON response:', text);
+      throw new Error('Server returned non-JSON response');
+    }
+
+    console.log('API Response data:', data);
 
     if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+      throw new Error(data.error || data.message || 'Request failed');
     }
 
     return data;
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error details:', {
+      message: error.message,
+      endpoint,
+      method: config.method || 'GET'
+    });
     throw error;
   }
 };

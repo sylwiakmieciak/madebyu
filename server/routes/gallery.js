@@ -1,34 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { authMiddleware } = require('../middleware/auth');
 const { Gallery, User } = require('../models');
 
-// Konfiguracja multer dla uploadu zdjec
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads/gallery');
-    
-    // Utworz folder jesli nie istnieje
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'img-' + uniqueSuffix + ext);
-  }
-});
+// Konfiguracja multer dla uploadu zdjec - używamy memory storage dla sharp
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit (przed kompresją)
   },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -65,14 +50,38 @@ router.post('/upload', authMiddleware, upload.single('image'), async (req, res) 
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    const uploadDir = path.join(__dirname, '../../uploads/gallery');
+    
+    // Utworz folder jesli nie istnieje
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Generuj unikalna nazwe pliku
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = 'img-' + uniqueSuffix + '.webp';
+    const filepath = path.join(uploadDir, filename);
+
+    // Skaluj i kompresuj obraz używając sharp
+    await sharp(req.file.buffer)
+      .resize(1200, 1200, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .webp({ quality: 85 })
+      .toFile(filepath);
+
+    // Pobierz informacje o zoptymalizowanym pliku
+    const stats = fs.statSync(filepath);
+
     // Zapisz informacje o zdjeciu w bazie
     const image = await Gallery.create({
       user_id: req.user.id,
-      filename: req.file.filename,
+      filename: filename,
       original_name: req.file.originalname,
-      file_path: `/uploads/gallery/${req.file.filename}`,
-      file_size: req.file.size,
-      mime_type: req.file.mimetype,
+      file_path: `/uploads/gallery/${filename}`,
+      file_size: stats.size,
+      mime_type: 'image/webp',
       alt_text: req.body.alt_text || req.file.originalname
     });
 
@@ -90,18 +99,42 @@ router.post('/upload-multiple', authMiddleware, upload.array('images', 10), asyn
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
+    const uploadDir = path.join(__dirname, '../../uploads/gallery');
+    
+    // Utworz folder jesli nie istnieje
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
     const images = await Promise.all(
-      req.files.map(file => 
-        Gallery.create({
+      req.files.map(async (file) => {
+        // Generuj unikalna nazwe pliku
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = 'img-' + uniqueSuffix + '.webp';
+        const filepath = path.join(uploadDir, filename);
+
+        // Skaluj i kompresuj obraz
+        await sharp(file.buffer)
+          .resize(1200, 1200, {
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .webp({ quality: 85 })
+          .toFile(filepath);
+
+        // Pobierz informacje o zoptymalizowanym pliku
+        const stats = fs.statSync(filepath);
+
+        return Gallery.create({
           user_id: req.user.id,
-          filename: file.filename,
+          filename: filename,
           original_name: file.originalname,
-          file_path: `/uploads/gallery/${file.filename}`,
-          file_size: file.size,
-          mime_type: file.mimetype,
+          file_path: `/uploads/gallery/${filename}`,
+          file_size: stats.size,
+          mime_type: 'image/webp',
           alt_text: file.originalname
-        })
-      )
+        });
+      })
     );
 
     res.status(201).json(images);

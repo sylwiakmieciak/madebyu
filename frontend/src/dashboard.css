@@ -235,3 +235,21 @@
   font-weight: 700;
   color: var(--primary-color);
 }
+
+/* Featured Products Management */
+.featured-product-item {
+  padding: 1rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.featured-product-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: var(--primary-color);
+}
+
+.featured-product-item:active {
+  cursor: grabbing;
+}

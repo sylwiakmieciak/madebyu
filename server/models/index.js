@@ -12,6 +12,8 @@ const Theme = require('./Theme');
 const UserTheme = require('./UserTheme');
 const Gallery = require('./Gallery');
 const Notification = require('./Notification');
+const Review = require('./Review');
+const ProductComment = require('./ProductComment')(sequelize);
 
 // ============================================
 // RELATIONSHIPS - Relacje między modelami
@@ -45,6 +47,10 @@ OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 User.hasMany(OrderItem, { foreignKey: 'seller_id', as: 'sales' });
 OrderItem.belongsTo(User, { foreignKey: 'seller_id', as: 'seller' });
 
+// User (moderator) -> Products (1:N)
+User.hasMany(Product, { foreignKey: 'moderated_by', as: 'moderatedProducts' });
+Product.belongsTo(User, { foreignKey: 'moderated_by', as: 'moderator' });
+
 // Theme -> UserThemes (1:N)
 Theme.hasMany(UserTheme, { foreignKey: 'theme_id', as: 'userThemes' });
 UserTheme.belongsTo(Theme, { foreignKey: 'theme_id', as: 'theme' });
@@ -68,6 +74,26 @@ Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // Order -> Notifications (1:N)
 Order.hasMany(Notification, { foreignKey: 'order_id', as: 'notifications' });
 Notification.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
+// User (seller) -> Reviews (1:N)
+User.hasMany(Review, { foreignKey: 'seller_id', as: 'receivedReviews' });
+Review.belongsTo(User, { foreignKey: 'seller_id', as: 'seller' });
+
+// User (buyer) -> Reviews (1:N)
+User.hasMany(Review, { foreignKey: 'buyer_id', as: 'givenReviews' });
+Review.belongsTo(User, { foreignKey: 'buyer_id', as: 'buyer' });
+
+// Order -> Reviews (1:N)
+Order.hasMany(Review, { foreignKey: 'order_id', as: 'reviews' });
+Review.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
+// Product -> ProductComments (1:N)
+Product.hasMany(ProductComment, { foreignKey: 'product_id', as: 'comments' });
+ProductComment.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+
+// User -> ProductComments (1:N)
+User.hasMany(ProductComment, { foreignKey: 'user_id', as: 'productComments' });
+ProductComment.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 
 // ============================================
 // SYNC DATABASE - Synchronizacja z bazą
@@ -217,5 +243,7 @@ module.exports = {
   UserTheme,
   Gallery,
   Notification,
+  Review,
+  ProductComment,
   syncDatabase
 };

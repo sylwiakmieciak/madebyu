@@ -2,7 +2,7 @@
 // PRODUCT ROUTES - Lista produktow, szczegoly
 // ============================================
 const express = require('express');
-const { Product, ProductImage, User, Category } = require('../models');
+const { Product, ProductImage, User, Category, sequelize } = require('../models');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -12,10 +12,15 @@ const router = express.Router();
 // ============================================
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { category, categories, search, limit = 12, offset = 0 } = req.query;
+    const { category, categories, search, seller, limit = 12, offset = 0 } = req.query;
     const { Op } = require('sequelize');
 
     const where = { status: 'published' };
+    
+    // Filtr po sprzedawcy
+    if (seller) {
+      where.user_id = seller;
+    }
     
     // Dodaj wyszukiwanie po tytule i opisie
     if (search) {
@@ -146,6 +151,30 @@ router.get('/my', authMiddleware, async (req, res) => {
 // ============================================
 router.get('/featured', async (req, res) => {
   try {
+    const { sortBy = 'manual' } = req.query; // manual, created_at, featured_at, views_count
+    
+    let orderClause = [];
+    
+    switch (sortBy) {
+      case 'created_at':
+        orderClause = [['created_at', 'DESC']];
+        break;
+      case 'featured_at':
+        orderClause = [['featured_at', 'DESC']];
+        break;
+      case 'views_count':
+        orderClause = [['views_count', 'DESC']];
+        break;
+      case 'manual':
+      default:
+        orderClause = [
+          [sequelize.literal('CASE WHEN featured_order IS NULL THEN 1 ELSE 0 END'), 'ASC'],
+          ['featured_order', 'ASC'],
+          ['featured_at', 'DESC']
+        ];
+        break;
+    }
+    
     const products = await Product.findAll({
       where: { 
         status: 'published',
@@ -169,10 +198,7 @@ router.get('/featured', async (req, res) => {
           required: false
         }
       ],
-      order: [
-        ['featured_at', 'DESC'],
-        ['created_at', 'DESC']
-      ],
+      order: orderClause,
       limit: 8
     });
 
@@ -230,7 +256,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
         {
           model: User,
           as: 'seller',
-          attributes: ['username', 'avatar_url', 'bio']
+          attributes: ['id', 'username', 'avatar_url', 'bio']
         },
         {
           model: Category,
@@ -317,7 +343,8 @@ router.post('/', authMiddleware, async (req, res) => {
       description: description || '',
       price: parseFloat(price),
       stock_quantity: parseInt(stock_quantity) || 1,
-      status: 'published'
+      status: 'draft', // Domyślnie draft, dopóki nie zostanie zaakceptowany
+      moderation_status: 'pending' // Wymaga moderacji
     });
 
     // Dodaj zdjecia jesli sa
@@ -440,6 +467,73 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Delete product error:', error);
     res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+// ============================================
+// PUT /api/products/featured/reorder - Zmień kolejność featured products (Admin only)
+// ============================================
+router.put('/featured/reorder', authMiddleware, async (req, res) => {
+  try {
+    // Sprawdź czy użytkownik jest adminem
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized - Admin only' });
+    }
+
+    const { productIds } = req.body; // Array of product IDs in new order
+
+    if (!Array.isArray(productIds)) {
+      return res.status(400).json({ error: 'productIds must be an array' });
+    }
+
+    // Aktualizuj featured_order dla każdego produktu
+    await Promise.all(
+      productIds.map((id, index) => 
+        Product.update(
+          { featured_order: index },
+          { where: { id } }
+        )
+      )
+    );
+
+    res.json({ message: 'Featured order updated successfully' });
+
+  } catch (error) {
+    console.error('Reorder featured products error:', error);
+    res.status(500).json({ error: 'Failed to reorder featured products' });
+  }
+});
+
+// ============================================
+// PUT /api/products/:id/featured - Toggle featured status (Admin only)
+// ============================================
+router.put('/:id/featured', authMiddleware, async (req, res) => {
+  try {
+    // Sprawdź czy użytkownik jest adminem
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized - Admin only' });
+    }
+
+    const { id } = req.params;
+    const { is_featured } = req.body;
+
+    const product = await Product.findByPk(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    await product.update({
+      is_featured,
+      featured_at: is_featured ? new Date() : null,
+      featured_order: is_featured ? 999 : null // Na końcu listy
+    });
+
+    res.json({ message: 'Featured status updated', product });
+
+  } catch (error) {
+    console.error('Toggle featured error:', error);
+    res.status(500).json({ error: 'Failed to toggle featured status' });
   }
 });
 

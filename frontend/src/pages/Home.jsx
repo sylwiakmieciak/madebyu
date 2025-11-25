@@ -7,20 +7,24 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slidesPerView, setSlidesPerView] = useState(3);
   const sliderRef = useRef(null);
   const autoPlayRef = useRef(null);
 
   useEffect(() => {
     loadCategories();
     loadFeaturedProducts();
+    updateSlidesPerView();
+    window.addEventListener('resize', updateSlidesPerView);
+    return () => window.removeEventListener('resize', updateSlidesPerView);
   }, []);
 
   useEffect(() => {
-    // Auto-play slider
+    // Auto-play slider - powoli przesuwaj w lewo
     if (featuredProducts.length > 0) {
       autoPlayRef.current = setInterval(() => {
         nextSlide();
-      }, 4000); // Change slide every 4 seconds
+      }, 3000); // Zmiana co 3 sekundy
 
       return () => {
         if (autoPlayRef.current) {
@@ -28,7 +32,18 @@ export default function Home() {
         }
       };
     }
-  }, [featuredProducts, currentSlide]);
+  }, [featuredProducts, currentSlide, slidesPerView]);
+
+  const updateSlidesPerView = () => {
+    const width = window.innerWidth;
+    if (width < 768) {
+      setSlidesPerView(1);
+    } else if (width < 1200) {
+      setSlidesPerView(2);
+    } else {
+      setSlidesPerView(3);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -52,22 +67,26 @@ export default function Home() {
       const response = await fetch('http://localhost:3001/api/products/featured');
       const data = await response.json();
       console.log('Featured products loaded:', data.products);
+      console.log('Featured products length:', data.products?.length);
       setFeaturedProducts(data.products || []);
     } catch (error) {
       console.error('Błąd ładowania wyróżnionych produktów:', error);
+      setFeaturedProducts([]);
     }
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => 
-      prev === featuredProducts.length - 1 ? 0 : prev + 1
-    );
+    setCurrentSlide((prev) => {
+      const maxSlide = Math.max(0, featuredProducts.length - slidesPerView);
+      return prev >= maxSlide ? 0 : prev + 1;
+    });
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => 
-      prev === 0 ? featuredProducts.length - 1 : prev - 1
-    );
+    setCurrentSlide((prev) => {
+      const maxSlide = Math.max(0, featuredProducts.length - slidesPerView);
+      return prev <= 0 ? maxSlide : prev - 1;
+    });
   };
 
   const goToSlide = (index) => {
@@ -85,127 +104,135 @@ export default function Home() {
         <section className="featured-products" style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
           <div className="container">
             <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: '2rem', fontWeight: 700 }}>
-              ⭐ Wybór Redakcji
+              Wybór Redakcji
             </h2>
             
-            <div style={{ position: 'relative', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ position: 'relative', maxWidth: '1400px', margin: '0 auto', overflow: 'hidden' }}>
               {/* Slider Container */}
-              <div style={{
-                overflow: 'hidden',
-                borderRadius: '16px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
-              }}>
-                <div 
-                  ref={sliderRef}
-                  style={{
-                    display: 'flex',
-                    transition: 'transform 0.5s ease-in-out',
-                    transform: `translateX(-${currentSlide * 100}%)`
-                  }}
-                >
-                  {featuredProducts.map(product => (
-                    <div 
-                      key={product.id}
-                      style={{
-                        minWidth: '100%',
-                        display: 'grid',
-                        gridTemplateColumns: window.innerWidth > 768 ? '1fr 1fr' : '1fr',
-                        backgroundColor: 'white',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => navigate(`/product/${product.id}`)}
-                    >
-                      {/* Product Image */}
-                      <div style={{
-                        position: 'relative',
-                        height: '500px',
-                        backgroundColor: 'var(--bg-light)',
-                        overflow: 'hidden'
-                      }}>
-                        {product.images && product.images[0] && (
-                          <img 
-                            src={product.images[0].image_url.startsWith('http') 
-                              ? product.images[0].image_url 
-                              : `http://localhost:3001${product.images[0].image_url}`}
-                            alt={product.title}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover'
-                            }}
-                          />
-                        )}
-                        <span style={{
-                          position: 'absolute',
-                          top: '20px',
-                          left: '20px',
-                          backgroundColor: '#fbbf24',
-                          color: '#92400e',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '8px',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                        }}>⭐ Wybór Redakcji</span>
-                      </div>
-                      
-                      {/* Product Info */}
-                      <div style={{
-                        padding: '3rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        backgroundColor: 'white'
-                      }}>
-                        <h3 style={{
-                          fontSize: '2rem',
-                          fontWeight: 700,
-                          marginBottom: '1rem',
-                          color: 'var(--text-color)'
-                        }}>
-                          {product.title}
-                        </h3>
-                        <p style={{
-                          fontSize: '2.5rem',
-                          fontWeight: 700,
-                          color: 'var(--primary-color)',
-                          marginBottom: '1rem'
-                        }}>
-                          {product.price} zł
-                        </p>
-                        <p style={{
-                          fontSize: '1rem',
-                          color: 'var(--text-light)',
-                          marginBottom: '2rem'
-                        }}>
-                          Sprzedawca: {product.seller?.username}
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/product/${product.id}`);
-                          }}
+              <div 
+                ref={sliderRef}
+                style={{
+                  display: 'flex',
+                  transition: 'transform 0.8s ease-in-out',
+                  transform: `translateX(-${currentSlide * (100 / slidesPerView)}%)`,
+                  gap: '1.5rem'
+                }}
+              >
+                {featuredProducts.map(product => (
+                  <div 
+                    key={product.id}
+                    style={{
+                      minWidth: `calc(${100 / slidesPerView}% - ${(slidesPerView - 1) * 1.5 / slidesPerView}rem)`,
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+                    }}
+                    onClick={() => navigate(`/product/${product.id}`)}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-8px)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    }}
+                  >
+                    {/* Product Image */}
+                    <div style={{
+                      position: 'relative',
+                      height: '350px',
+                      backgroundColor: 'var(--bg-light)',
+                      overflow: 'hidden'
+                    }}>
+                      {product.images && product.images[0] && (
+                        <img 
+                          src={product.images[0].image_url.startsWith('http') 
+                            ? product.images[0].image_url 
+                            : `http://localhost:3001${product.images[0].image_url}`}
+                          alt={product.title}
                           style={{
-                            padding: '1rem 2rem',
-                            backgroundColor: 'var(--primary-color)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            alignSelf: 'flex-start'
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
                           }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
-                        >
-                          Zobacz szczegóły →
-                        </button>
-                      </div>
+                        />
+                      )}
+                      <span style={{
+                        position: 'absolute',
+                        top: '15px',
+                        left: '15px',
+                        backgroundColor: '#fbbf24',
+                        color: '#92400e',
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '8px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                      }}>Wybór Redakcji</span>
                     </div>
-                  ))}
-                </div>
+                    
+                    {/* Product Info - Pod zdjęciem */}
+                    <div style={{
+                      padding: '1.5rem',
+                      backgroundColor: 'white'
+                    }}>
+                      <h3 style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        marginBottom: '0.75rem',
+                        color: 'var(--text-color)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {product.title}
+                      </h3>
+                      <p style={{
+                        fontSize: '1.75rem',
+                        fontWeight: 700,
+                        color: 'var(--primary-color)',
+                        marginBottom: '0.5rem'
+                      }}>
+                        {product.price} zł
+                      </p>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--text-light)',
+                        marginBottom: '1rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        Sprzedawca: {product.seller?.username}
+                      </p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/product/${product.id}`);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1.5rem',
+                          backgroundColor: 'var(--primary-color)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
+                      >
+                        Zobacz szczegóły →
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Navigation Arrows */}
@@ -273,17 +300,17 @@ export default function Home() {
               )}
 
               {/* Dots Navigation */}
-              {featuredProducts.length > 1 && (
+              {featuredProducts.length > slidesPerView && (
                 <div style={{
                   display: 'flex',
                   justifyContent: 'center',
                   gap: '10px',
                   marginTop: '2rem'
                 }}>
-                  {featuredProducts.map((_, index) => (
+                  {Array.from({ length: Math.ceil(featuredProducts.length - slidesPerView + 1) }).map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => goToSlide(index)}
+                      onClick={() => setCurrentSlide(index)}
                       style={{
                         width: currentSlide === index ? '40px' : '12px',
                         height: '12px',
@@ -306,34 +333,29 @@ export default function Home() {
       <section className="categories-section">
         <div className="container">
           <h2>Kategorie Produktów</h2>
-          <div className="categories-grid">
-            {categories.map(category => (
-              <div key={category.id} className="category-card">
-                <h3>{category.name}</h3>
-                <ul style={{ listStyle: 'none', padding: 0, marginTop: '0.5rem' }}>
-                  {category.children.slice(0, 4).map(child => (
-                    <li key={child.id} style={{ 
-                      fontSize: '0.9rem', 
-                      color: 'var(--text-light)',
-                      marginBottom: '0.25rem'
-                    }}>
-                      {child.name}
-                    </li>
-                  ))}
-                </ul>
-                <Link 
-                  to={`/products?category=${category.id}`}
-                  style={{
-                    display: 'inline-block',
-                    marginTop: '1rem',
-                    color: 'var(--primary-color)',
-                    fontWeight: 600,
-                    textDecoration: 'none'
-                  }}
-                >
-                  Zobacz wszystkie →
-                </Link>
-              </div>
+          <div 
+            className="categories-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(8, 1fr)',
+              gap: '1.5rem',
+              marginTop: '3rem'
+            }}
+          >
+            {categories.slice(0, 16).map(category => (
+              <Link
+                key={category.id}
+                to={`/products?category=${category.id}`}
+                className="category-card"
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  padding: '1.5rem 1rem',
+                  textAlign: 'center'
+                }}
+              >
+                <h3 style={{ margin: 0 }}>{category.name}</h3>
+              </Link>
             ))}
           </div>
         </div>

@@ -59,6 +59,10 @@ const themeRoutes = require('./routes/themes');
 const galleryRoutes = require('./routes/gallery');
 const orderRoutes = require('./routes/orders');
 const notificationRoutes = require('./routes/notifications');
+const reviewRoutes = require('./routes/reviews');
+const moderationRoutes = require('./routes/moderation');
+const adminRoutes = require('./routes/admin');
+const commentRoutes = require('./routes/comments');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -67,6 +71,10 @@ app.use('/api/themes', themeRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/moderation', moderationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/comments', commentRoutes);
 
 // ============================================
 // HEALTH CHECK

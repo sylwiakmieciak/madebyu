@@ -51,6 +51,26 @@ const Product = sequelize.define('Product', {
     type: DataTypes.ENUM('draft', 'published', 'sold', 'archived'),
     defaultValue: 'draft'
   },
+  moderation_status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    defaultValue: 'pending'
+  },
+  moderated_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  moderated_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  rejection_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   is_featured: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -58,6 +78,11 @@ const Product = sequelize.define('Product', {
   featured_at: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  featured_order: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null
   },
   views_count: {
     type: DataTypes.INTEGER,

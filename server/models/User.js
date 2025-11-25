@@ -97,6 +97,35 @@ const User = sequelize.define('User', {
   last_login: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  // Moderator fields
+  is_moderator: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  moderation_categories: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const value = this.getDataValue('moderation_categories');
+      return value ? JSON.parse(value) : [];
+    },
+    set(value) {
+      this.setDataValue('moderation_categories', JSON.stringify(value));
+    }
+  },
+  // Permission fields
+  can_moderate_products: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  can_moderate_comments: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  can_manage_themes: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'users',

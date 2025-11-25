@@ -2,7 +2,7 @@
 // ORDER ROUTES - Zamówienia
 // ============================================
 const express = require('express');
-const { Order, OrderItem, Product, User, ProductImage, Notification } = require('../models');
+const { Order, OrderItem, Product, User, ProductImage, Notification, Review } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
@@ -198,6 +198,7 @@ router.get('/my', authMiddleware, async (req, res) => {
         {
           model: OrderItem,
           as: 'items',
+          attributes: ['id', 'product_id', 'seller_id', 'quantity', 'price', 'subtotal'],
           include: [
             {
               model: Product,
@@ -212,8 +213,18 @@ router.get('/my', authMiddleware, async (req, res) => {
                   attributes: ['image_url']
                 }
               ]
+            },
+            {
+              model: User,
+              as: 'seller',
+              attributes: ['id', 'username', 'full_name', 'avatar_url']
             }
           ]
+        },
+        {
+          model: Review,
+          as: 'reviews',
+          required: false
         }
       ],
       order: [['created_at', 'DESC']]
@@ -381,4 +392,194 @@ router.put('/:id/ship', authMiddleware, async (req, res) => {
   }
 });
 
+// ============================================
+// PUT /api/orders/:id/confirm-delivery - Potwierdź otrzymanie przesyłki
+// ============================================
+router.put('/:id/confirm-delivery', authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      where: { 
+        id: req.params.id,
+        buyer_id: req.user.id,
+        status: 'shipped'
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Zamówienie nie znalezione lub nie może być potwierdzone' });
+    }
+
+    order.status = 'delivered';
+    await order.save();
+
+    // Powiadom sprzedawców
+    const orderItems = await OrderItem.findAll({
+      where: { order_id: order.id },
+      attributes: ['seller_id'],
+      group: ['seller_id']
+    });
+
+    for (const item of orderItems) {
+      await Notification.create({
+        user_id: item.seller_id,
+        type: 'order_delivered',
+        title: 'Przesyłka dostarczona',
+        message: `Kupujący potwierdził otrzymanie zamówienia ${order.order_number}`,
+        order_id: order.id
+      });
+    }
+
+    res.json({ 
+      message: 'Potwierdzono otrzymanie przesyłki',
+      order 
+    });
+
+  } catch (error) {
+    console.error('Confirm delivery error:', error);
+    res.status(500).json({ error: 'Nie udało się potwierdzić dostawy' });
+  }
+});
+
+// ============================================
+// POST /api/orders/:id/review - Dodaj ocenę sprzedawcy
+// ============================================
+router.post('/:id/review', authMiddleware, async (req, res) => {
+  console.log('===== REVIEW ENDPOINT HIT =====');
+  console.log('Request params:', req.params);
+  console.log('Request body:', req.body);
+  console.log('Request user:', req.user ? req.user.id : 'NO USER');
+  
+  try {
+    const { seller_id, rating, comment } = req.body;
+
+    console.log('Review request:', { order_id: req.params.id, seller_id, rating, buyer_id: req.user.id });
+
+    // Walidacja
+    if (!seller_id || !rating || rating < 1 || rating > 5) {
+      console.log('Validation failed');
+      return res.status(400).json({ error: 'Nieprawidłowe dane oceny' });
+    }
+
+    // Sprawdź czy zamówienie istnieje i należy do kupującego
+    const order = await Order.findOne({
+      where: { 
+        id: req.params.id,
+        buyer_id: req.user.id
+      },
+      include: [{
+        model: OrderItem,
+        as: 'items',
+        where: { seller_id },
+        required: false
+      }]
+    });
+
+    console.log('Order found:', order ? 'yes' : 'no');
+    if (order) {
+      console.log('Order status:', order.status);
+      console.log('Order items:', order.items?.length);
+    }
+
+    if (!order) {
+      return res.status(404).json({ error: 'Zamówienie nie znalezione' });
+    }
+
+    if (!order.items || order.items.length === 0) {
+      return res.status(400).json({ error: 'Nie kupowałeś produktów od tego sprzedawcy w tym zamówieniu' });
+    }
+
+    // Sprawdź czy ocena już istnieje
+    const existingReview = await Review.findOne({
+      where: { 
+        order_id: order.id,
+        seller_id,
+        buyer_id: req.user.id
+      }
+    });
+
+    if (existingReview) {
+      return res.status(400).json({ error: 'Już wystawiłeś ocenę dla tego sprzedawcy' });
+    }
+
+    // Utwórz ocenę
+    const review = await Review.create({
+      order_id: order.id,
+      seller_id,
+      buyer_id: req.user.id,
+      rating,
+      comment: comment || null
+    });
+
+    console.log('Review created:', review.id);
+
+    // Powiadom sprzedawcę
+    await Notification.create({
+      user_id: seller_id,
+      type: 'new_review',
+      title: 'Nowa ocena!',
+      message: `Otrzymałeś ocenę ${rating}/5 gwiazdek`,
+      order_id: order.id
+    });
+
+    res.status(201).json({ 
+      message: 'Ocena dodana pomyślnie',
+      review 
+    });
+
+  } catch (error) {
+    console.error('Add review error:', error);
+    res.status(500).json({ error: 'Nie udało się dodać oceny' });
+  }
+});
+
+// ============================================
+// GET /api/orders/my-purchases - Pobierz zakupy użytkownika
+// ============================================
+router.get('/my-purchases', authMiddleware, async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      where: { buyer_id: req.user.id },
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            {
+              model: Product,
+              include: [{ model: ProductImage, limit: 1 }]
+            },
+            {
+              model: User,
+              as: 'seller',
+              attributes: ['id', 'username', 'avatar_url']
+            }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    // Sprawdź czy zamówienie ma wystawioną opinię
+    const ordersWithReviewStatus = await Promise.all(
+      orders.map(async (order) => {
+        const orderJson = order.toJSON();
+        const review = await Review.findOne({
+          where: {
+            order_id: order.id,
+            buyer_id: req.user.id
+          }
+        });
+        orderJson.review_submitted = !!review;
+        return orderJson;
+      })
+    );
+
+    res.json({ orders: ordersWithReviewStatus });
+  } catch (error) {
+    console.error('Get purchases error:', error);
+    res.status(500).json({ error: 'Nie udało się pobrać zakupów' });
+  }
+});
+
 module.exports = router;
+

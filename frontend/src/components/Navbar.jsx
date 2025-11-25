@@ -8,12 +8,38 @@ export default function Navbar({ user, onLogout }) {
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const closeTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadCategories();
-  }, []);
+    if (user) {
+      loadUnreadCount();
+      // Odświeżaj co 30 sekund
+      const interval = setInterval(loadUnreadCount, 30000);
+      // Nasłuchuj na custom event z Notifications
+      const handleRefresh = () => loadUnreadCount();
+      window.addEventListener('refreshNotifications', handleRefresh);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('refreshNotifications', handleRefresh);
+      };
+    }
+  }, [user]);
+
+  const loadUnreadCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/notifications/unread-count', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setUnreadCount(data.count || 0);
+    } catch (error) {
+      console.error('Błąd ładowania licznika powiadomień:', error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -192,14 +218,39 @@ export default function Navbar({ user, onLogout }) {
 
           {user ? (
             <>
-              <Link to="/cart">🛍️ Koszyk</Link>
-              <Link to="/notifications">🔔 Powiadomienia</Link>
+              <Link to="/cart">Koszyk</Link>
+              <Link to="/notifications" style={{ 
+                position: 'relative', 
+                paddingRight: unreadCount > 0 ? '30px' : '0', 
+                display: 'inline-flex', 
+                alignItems: 'center' 
+              }}>
+                Powiadomienia
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '0',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '2px 6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    minWidth: '20px',
+                    textAlign: 'center'
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
               <Link to="/dashboard">Moje Konto</Link>
               <a href="#" onClick={handleLogout} className="btn-logout">Wyloguj</a>
             </>
           ) : (
             <>
-              <Link to="/cart">🛍️ Koszyk</Link>
+              <Link to="/cart">Koszyk</Link>
               <Link to="/login" className="btn-login">Zaloguj się</Link>
             </>
           )}

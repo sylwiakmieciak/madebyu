@@ -9,11 +9,16 @@ export default function ProductDetails({ user }) {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [error, setError] = useState('');
+  const [comments, setComments] = useState([]);
   const viewCountedRef = useRef(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   useEffect(() => {
     viewCountedRef.current = false; // Resetuj przy zmianie ID
     loadProduct();
+    loadComments();
   }, [id]);
 
   const loadProduct = async () => {
@@ -38,6 +43,53 @@ export default function ProductDetails({ user }) {
       setError('Błąd ładowania produktu');
     } finally {
       setLoading(false);
+    }
+  };
+  const loadComments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`http://localhost:3001/api/comments/product/${id}`, {
+        headers
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setComments(data.comments || []);
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm('Czy na pewno chcesz usunąć ten komentarz?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        loadComments();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Nie udało się usunąć komentarza');
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      alert('Wystąpił błąd');
     }
   };
 
@@ -377,7 +429,7 @@ export default function ProductDetails({ user }) {
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              {product.is_featured ? '⭐ Wybór redakcji' : '☆ Dodaj do wyborów redakcji'}
+              {product.is_featured ? 'Wybór redakcji' : 'Dodaj do wyborów redakcji'}
             </button>
           )}
 
@@ -397,7 +449,7 @@ export default function ProductDetails({ user }) {
               }}>
                 Sprzedawca
               </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 {product.seller.avatar_url ? (
                   <img
                     src={product.seller.avatar_url}
@@ -425,7 +477,7 @@ export default function ProductDetails({ user }) {
                     {product.seller.username.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
+                <div style={{ flex: 1 }}>
                   <p style={{ 
                     fontSize: '1.1rem', 
                     fontWeight: 600,
@@ -444,6 +496,25 @@ export default function ProductDetails({ user }) {
                   )}
                 </div>
               </div>
+              <button
+                onClick={() => navigate(`/user/${product.seller.id}`)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-dark)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary-color)'}
+              >
+                Zobacz profil sprzedawcy
+              </button>
             </div>
           )}
 
@@ -453,7 +524,7 @@ export default function ProductDetails({ user }) {
             color: 'var(--text-light)',
             marginTop: '1rem'
           }}>
-            👁️ Wyświetlenia: {product.views_count || 0}
+            Wyświetlenia: {product.views_count || 0}
           </p>
         </div>
       </div>
@@ -485,6 +556,114 @@ export default function ProductDetails({ user }) {
           </p>
         </div>
       )}
+      {/* Sekcja komentarzy produktu */}
+      <div style={{ 
+        marginTop: '4rem', 
+        padding: '2rem', 
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+      }}>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+          Komentarze ({comments.length})
+        </h2>
+
+        <div style={{
+          padding: '1.5rem',
+          backgroundColor: 'var(--bg-light)',
+          borderRadius: '8px',
+          textAlign: 'center',
+          marginBottom: '2rem'
+        }}>
+          <p style={{ margin: 0, color: 'var(--text-light)' }}>
+            Możesz dodać komentarz po zakupie tego produktu
+          </p>
+        </div>
+
+        {/* Lista komentarzy */}
+        {comments.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-light)', padding: '2rem' }}>
+            Brak komentarzy. Bądź pierwszy!
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {comments.map(comment => (
+              <div 
+                key={comment.id}
+                style={{
+                  padding: '1.5rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  position: 'relative',
+                  backgroundColor: !comment.approved && user?.id === comment.user_id ? '#fef3c7' : 'white',
+                  opacity: !comment.approved && user?.id === comment.user_id ? 0.9 : 1
+                }}
+              >
+                {!comment.approved && user?.id === comment.user_id && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '0.75rem',
+                    right: '0.75rem',
+                    padding: '0.25rem 0.75rem',
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600
+                  }}>
+                    Oczekuje na akceptację
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <img
+                    src={comment.User?.avatar_url || 'https://via.placeholder.com/40'}
+                    alt={comment.User?.full_name || comment.User?.username}
+                    style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '50%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>
+                      {comment.User?.full_name || comment.User?.username}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>
+                      {new Date(comment.created_at).toLocaleDateString('pl-PL', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                  {user && (user.id === comment.user_id || user.role === 'admin') && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Usuń
+                    </button>
+                  )}
+                </div>
+                <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {comment.comment}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Przycisk powrotu */}
       <div style={{ textAlign: 'center', marginTop: '3rem' }}>
