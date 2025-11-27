@@ -161,7 +161,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: [
-        'id', 'username', 'email', 'role', 'full_name', 'avatar_url', 'bio', 'greeting', 
+        'id', 'username', 'email', 'role', 'full_name', 'avatar_url', 'bio', 'greeting',
         'can_moderate_products', 'can_moderate_comments', 'can_manage_themes',
         'created_at'
       ]

@@ -147,6 +147,11 @@ router.put('/:commentId', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Brak uprawnień' });
     }
 
+    // Nie można edytować zatwierdzonego komentarza
+    if (comment.approved) {
+      return res.status(403).json({ message: 'Nie można edytować zatwierdzonego komentarza' });
+    }
+
     comment.comment = newComment.trim();
     await comment.save();
 

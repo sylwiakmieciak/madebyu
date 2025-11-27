@@ -3572,72 +3572,63 @@ export default function Dashboard({ user, refreshUser }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {purchases.map(order => (
-                <div
-                  key={order.id}
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: '8px',
-                    padding: '1.5rem',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                        Zamówienie #{order.id}
-                      </h3>
-                      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
-                        Data: {new Date(order.created_at).toLocaleDateString('pl-PL')} • 
-                        Status: <span style={{ 
-                          fontWeight: 600,
-                          color: order.status === 'completed' ? '#10b981' : '#f59e0b'
-                        }}>
-                          {order.status === 'completed' ? 'Zrealizowane' : 'W trakcie'}
-                        </span>
-                      </p>
+              {purchases.flatMap(order => 
+                order.items.map(item => (
+                  <div
+                    key={`${order.id}-${item.id}`}
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      padding: '1.5rem',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                          Zamówienie #{order.id}
+                        </h3>
+                        <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                          Data: {new Date(order.created_at).toLocaleDateString('pl-PL')} • 
+                          Status: <span style={{ 
+                            fontWeight: 600,
+                            color: order.status === 'completed' ? '#10b981' : '#f59e0b'
+                          }}>
+                            {order.status === 'completed' ? 'Zrealizowane' : 'W trakcie'}
+                          </span>
+                        </p>
+                      </div>
                     </div>
-                    <p style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                      {order.total_price} zł
-                    </p>
-                  </div>
 
-                  {order.items && order.items.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {order.items.map(item => (
-                        <div 
-                          key={item.id}
-                          style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            padding: '1rem',
-                            backgroundColor: 'var(--bg-light)',
-                            borderRadius: '6px'
-                          }}
-                        >
-                          {item.Product?.ProductImages?.[0] && (
-                            <img
-                              src={`http://localhost:3001${item.Product.ProductImages[0].image_url}`}
-                              alt={item.Product.title}
-                              style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px' }}
-                            />
-                          )}
-                          <div style={{ flex: 1 }}>
-                            <h4 style={{ marginBottom: '0.25rem' }}>{item.Product?.title}</h4>
-                            <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
-                              Sprzedawca: {item.seller?.username}
-                            </p>
-                            <p style={{ fontWeight: 600, marginTop: '0.5rem' }}>
-                              {item.price} zł × {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                    <div 
+                      style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        padding: '1rem',
+                        backgroundColor: 'var(--bg-light)',
+                        borderRadius: '6px',
+                        marginBottom: '1rem'
+                      }}
+                    >
+                      {item.Product?.ProductImages?.[0] && (
+                        <img
+                          src={`http://localhost:3001${item.Product.ProductImages[0].image_url}`}
+                          alt={item.Product.title}
+                          style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px' }}
+                        />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ marginBottom: '0.25rem' }}>{item.Product?.title}</h4>
+                        <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                          Sprzedawca: {item.seller?.username}
+                        </p>
+                        <p style={{ fontWeight: 700, marginTop: '0.5rem', fontSize: '1.1rem' }}>
+                          {item.price} zł × {item.quantity} = {item.price * item.quantity} zł
+                        </p>
+                      </div>
                     </div>
-                  )}
 
-                  {order.status === 'completed' && !order.review_submitted && (
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    {order.status === 'completed' && !order.review_submitted && (
                       <button
                         onClick={() => {
                           setSelectedOrderForReview(order);
@@ -3646,30 +3637,29 @@ export default function Dashboard({ user, refreshUser }) {
                         }}
                         className="btn"
                         style={{
-                          flex: 1,
+                          width: '100%',
                           backgroundColor: '#10b981',
                           color: 'white'
                         }}
                       >
                         ⭐ Oceń sprzedawcę
                       </button>
-                    </div>
-                  )}
+                    )}
 
-                  {order.review_submitted && (
-                    <div style={{
-                      marginTop: '1rem',
-                      padding: '0.75rem',
-                      backgroundColor: '#d1fae5',
-                      borderRadius: '6px',
-                      color: '#065f46',
-                      textAlign: 'center'
-                    }}>
-                      ✓ Dziękujemy za opinię!
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {order.review_submitted && (
+                      <div style={{
+                        padding: '0.75rem',
+                        backgroundColor: '#d1fae5',
+                        borderRadius: '6px',
+                        color: '#065f46',
+                        textAlign: 'center'
+                      }}>
+                        ✓ Dziękujemy za opinię!
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           )}
 

@@ -14,6 +14,9 @@ export default function ProductDetails({ user }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
 
   useEffect(() => {
     viewCountedRef.current = false; // Resetuj przy zmianie ID
@@ -89,6 +92,38 @@ export default function ProductDetails({ user }) {
       }
     } catch (error) {
       console.error('Failed to delete comment:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
+  const handleEditComment = async (commentId) => {
+    if (!editingCommentText.trim()) {
+      alert('Komentarz nie może być pusty');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ comment: editingCommentText })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEditingCommentId(null);
+        setEditingCommentText('');
+        loadComments();
+      } else {
+        alert(data.message || 'Nie udało się zaktualizować komentarza');
+      }
+    } catch (error) {
+      console.error('Failed to edit comment:', error);
       alert('Wystąpił błąd');
     }
   };
@@ -640,25 +675,99 @@ export default function ProductDetails({ user }) {
                     </div>
                   </div>
                   {user && (user.id === comment.user_id || user.role === 'admin') && (
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '0.875rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Usuń
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {user.id === comment.user_id && !comment.approved && (
+                        <button
+                          onClick={() => {
+                            setEditingCommentId(comment.id);
+                            setEditingCommentText(comment.comment);
+                          }}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.875rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edytuj
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Usuń
+                      </button>
+                    </div>
                   )}
                 </div>
-                <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                  {comment.comment}
-                </p>
+                {editingCommentId === comment.id ? (
+                  <div style={{ marginTop: '1rem' }}>
+                    <textarea
+                      value={editingCommentText}
+                      onChange={(e) => setEditingCommentText(e.target.value)}
+                      style={{
+                        width: '100%',
+                        minHeight: '100px',
+                        padding: '0.75rem',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical',
+                        marginBottom: '0.5rem'
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => handleEditComment(comment.id)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Zapisz
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingCommentId(null);
+                          setEditingCommentText('');
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#6b7280',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Anuluj
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    {comment.comment}
+                  </p>
+                )}
               </div>
             ))}
           </div>

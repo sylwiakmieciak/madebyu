@@ -4,6 +4,7 @@
 const express = require('express');
 const { Order, OrderItem, Product, User, ProductImage, Notification, Review } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
+const { sendOrderConfirmationEmail } = require('../config/email');
 
 const router = express.Router();
 
@@ -173,6 +174,33 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     console.log('Order created successfully:', fullOrder.id);
+
+    // Wyślij email z potwierdzeniem zamówienia
+    try {
+      const emailData = {
+        orderNumber,
+        shipping_email,
+        shipping_name,
+        items: orderItems.map(item => {
+          const product = products.find(p => p.id === item.product_id);
+          return {
+            product_name: product.title,
+            quantity: item.quantity,
+            price: item.price
+          };
+        }),
+        total_amount: totalAmount,
+        shipping_address,
+        shipping_city,
+        shipping_postal_code
+      };
+      
+      await sendOrderConfirmationEmail(emailData);
+    } catch (emailError) {
+      console.error('Email sending failed, but order was created:', emailError);
+      // Nie przerywamy procesu, email jest opcjonalny
+    }
+
     res.status(201).json({ 
       message: 'Zamówienie utworzone pomyślnie',
       order: fullOrder 
