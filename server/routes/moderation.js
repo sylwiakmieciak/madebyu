@@ -36,7 +36,7 @@ router.get('/products', authMiddleware, moderatorMiddleware, async (req, res) =>
         {
           model: User,
           as: 'seller',
-          attributes: ['id', 'username', 'email', 'full_name']
+          attributes: ['id', 'username', 'email', 'full_name', 'avatar_url']
         },
         {
           model: Category,

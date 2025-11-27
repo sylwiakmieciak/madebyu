@@ -27,7 +27,16 @@ export default function ProductDetails({ user }) {
   const loadProduct = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/products/${id}`);
+      const token = localStorage.getItem('token');
+      const headers = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`http://localhost:3001/api/products/${id}`, {
+        headers
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -128,6 +137,56 @@ export default function ProductDetails({ user }) {
     }
   };
 
+  const handleApproveComment = async (commentId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/comments/admin/${commentId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Komentarz zatwierdzony!');
+        loadComments();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Błąd podczas zatwierdzania');
+      }
+    } catch (error) {
+      console.error('Failed to approve comment:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
+  const handleRejectComment = async (commentId) => {
+    if (!confirm('Czy na pewno chcesz odrzucić ten komentarz?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/comments/admin/${commentId}/reject`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Komentarz odrzucony!');
+        loadComments();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Błąd podczas odrzucania');
+      }
+    } catch (error) {
+      console.error('Failed to reject comment:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
   const incrementViewCount = async () => {
     try {
       await fetch(`http://localhost:3001/api/products/${id}/view`, {
@@ -224,30 +283,138 @@ export default function ProductDetails({ user }) {
 
   return (
     <div className="container" style={{ padding: '3rem 1rem', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Breadcrumb */}
+      {/* Breadcrumb + Moderacja buttons */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: '0.5rem',
+        justifyContent: 'space-between',
         marginBottom: '2rem',
-        fontSize: '0.9rem',
-        color: 'var(--text-light)'
+        flexWrap: 'wrap',
+        gap: '1rem'
       }}>
-        <span 
-          onClick={() => navigate('/')} 
-          style={{ cursor: 'pointer', color: 'var(--primary-color)' }}
-        >
-          Strona główna
-        </span>
-        <span>›</span>
-        <span 
-          onClick={() => navigate('/products')} 
-          style={{ cursor: 'pointer', color: 'var(--primary-color)' }}
-        >
-          Produkty
-        </span>
-        <span>›</span>
-        <span>{product.title}</span>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          fontSize: '0.9rem',
+          color: 'var(--text-light)'
+        }}>
+          {new URLSearchParams(window.location.search).get('from') === 'moderation' ? (
+            <span 
+              onClick={() => {
+                navigate('/dashboard');
+                setTimeout(() => {
+                  const moderationTab = document.querySelector('[data-tab="moderation"]');
+                  if (moderationTab) moderationTab.click();
+                }, 100);
+              }} 
+              style={{ 
+                cursor: 'pointer', 
+                color: 'var(--primary-color)', 
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: 'var(--primary-light)',
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--primary-light)'}
+            >
+              ← Powrót do moderacji
+            </span>
+          ) : (
+            <>
+              <span 
+                onClick={() => navigate('/')} 
+                style={{ cursor: 'pointer', color: 'var(--primary-color)' }}
+              >
+                Strona główna
+              </span>
+              <span>›</span>
+              <span 
+                onClick={() => navigate('/products')} 
+                style={{ cursor: 'pointer', color: 'var(--primary-color)' }}
+              >
+                Produkty
+              </span>
+              <span>›</span>
+              <span>{product.title}</span>
+            </>
+          )}
+        </div>
+
+        {user && (user.role === 'admin' || user.can_moderate_products) && product.status !== 'published' && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token');
+                  const response = await fetch(`http://localhost:3001/api/moderation/products/${product.id}/approve`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  if (response.ok) {
+                    alert('Produkt zaakceptowany!');
+                    navigate('/dashboard?tab=moderation');
+                  }
+                } catch (error) {
+                  console.error('Error:', error);
+                  alert('Błąd podczas akceptacji');
+                }
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              ✓ Zaakceptuj
+            </button>
+            <button
+              onClick={() => {
+                const reason = prompt('Podaj powód odrzucenia:');
+                if (reason) {
+                  (async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`http://localhost:3001/api/moderation/products/${product.id}/reject`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ reason })
+                      });
+                      if (response.ok) {
+                        alert('Produkt odrzucony!');
+                        navigate('/dashboard?tab=moderation');
+                      }
+                    } catch (error) {
+                      console.error('Error:', error);
+                      alert('Błąd podczas odrzucania');
+                    }
+                  })();
+                }
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              ✗ Odrzuć
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ 
@@ -351,15 +518,13 @@ export default function ProductDetails({ user }) {
             {product.title}
           </h1>
 
-          {product.category && (
-            <p style={{ 
-              fontSize: '1rem', 
-              color: 'var(--text-light)',
-              marginBottom: '1.5rem'
-            }}>
-              Kategoria: <span style={{ color: 'var(--primary-color)' }}>{product.category.name}</span>
-            </p>
-          )}
+          <p style={{ 
+            fontSize: '1rem', 
+            color: 'var(--text-light)',
+            marginBottom: '1.5rem'
+          }}>
+            Kategoria: <span style={{ color: 'var(--primary-color)' }}>{product.category?.name || product.Category?.name || 'Nieznana'}</span>
+          </p>
 
           <div style={{
             padding: '1.5rem',
@@ -469,7 +634,7 @@ export default function ProductDetails({ user }) {
           )}
 
           {/* Informacje o sprzedawcy */}
-          {product.seller && (
+          {(product.seller || product.User) && (
             <div style={{
               padding: '1.5rem',
               backgroundColor: 'var(--bg-cream)',
@@ -485,10 +650,10 @@ export default function ProductDetails({ user }) {
                 Sprzedawca
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                {product.seller.avatar_url ? (
+                {(product.seller?.avatar_url || product.User?.avatar_url) ? (
                   <img
-                    src={product.seller.avatar_url}
-                    alt={product.seller.username}
+                    src={product.seller?.avatar_url || product.User?.avatar_url}
+                    alt={product.seller?.username || product.User?.username}
                     style={{
                       width: '50px',
                       height: '50px',
@@ -518,21 +683,21 @@ export default function ProductDetails({ user }) {
                     fontWeight: 600,
                     color: 'var(--text-color)'
                   }}>
-                    {product.seller.username}
+                    {product.seller?.username || product.User?.username}
                   </p>
-                  {product.seller.bio && (
+                  {(product.seller?.bio || product.User?.bio) && (
                     <p style={{
                       fontSize: '0.9rem',
                       color: 'var(--text-light)',
                       marginTop: '0.25rem'
                     }}>
-                      {product.seller.bio}
+                      {product.seller?.bio || product.User?.bio}
                     </p>
                   )}
                 </div>
               </div>
               <button
-                onClick={() => navigate(`/user/${product.seller.id}`)}
+                onClick={() => navigate(`/user/${product.seller?.id || product.User?.id}`)}
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -581,14 +746,14 @@ export default function ProductDetails({ user }) {
           }}>
             Opis produktu
           </h2>
-          <p style={{ 
-            fontSize: '1.05rem', 
-            lineHeight: 1.8,
-            color: 'var(--text-color)',
-            whiteSpace: 'pre-wrap'
-          }}>
-            {product.description}
-          </p>
+          <div 
+            style={{ 
+              fontSize: '1.05rem', 
+              lineHeight: 1.8,
+              color: 'var(--text-color)'
+            }}
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
         </div>
       )}
       {/* Sekcja komentarzy produktu */}
@@ -630,11 +795,11 @@ export default function ProductDetails({ user }) {
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   position: 'relative',
-                  backgroundColor: !comment.approved && user?.id === comment.user_id ? '#fef3c7' : 'white',
-                  opacity: !comment.approved && user?.id === comment.user_id ? 0.9 : 1
+                  backgroundColor: !comment.approved ? '#fef3c7' : 'white',
+                  opacity: !comment.approved ? 0.9 : 1
                 }}
               >
-                {!comment.approved && user?.id === comment.user_id && (
+                {!comment.approved && (
                   <div style={{
                     position: 'absolute',
                     top: '0.75rem',
@@ -646,7 +811,7 @@ export default function ProductDetails({ user }) {
                     fontSize: '0.75rem',
                     fontWeight: 600
                   }}>
-                    Oczekuje na akceptację
+                    Oczekuje na moderację
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -674,8 +839,45 @@ export default function ProductDetails({ user }) {
                       })}
                     </div>
                   </div>
-                  {user && (user.id === comment.user_id || user.role === 'admin') && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {user && (
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {/* Przyciski moderacji dla adminów/moderatorów */}
+                      {!comment.approved && (user.role === 'admin' || user.can_moderate_comments) && (
+                        <>
+                          <button
+                            onClick={() => handleApproveComment(comment.id)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              cursor: 'pointer',
+                              fontWeight: 600
+                            }}
+                          >
+                            ✓ Akceptuj
+                          </button>
+                          <button
+                            onClick={() => handleRejectComment(comment.id)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: '#f59e0b',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              cursor: 'pointer',
+                              fontWeight: 600
+                            }}
+                          >
+                            ✗ Odrzuć
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Przyciski edycji/usuwania */}
                       {user.id === comment.user_id && !comment.approved && (
                         <button
                           onClick={() => {
@@ -695,20 +897,22 @@ export default function ProductDetails({ user }) {
                           Edytuj
                         </button>
                       )}
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Usuń
-                      </button>
+                      {(user.id === comment.user_id || user.role === 'admin') && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.875rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Usuń
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

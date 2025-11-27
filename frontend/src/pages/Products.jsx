@@ -10,6 +10,8 @@ export default function Products({ user }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   useEffect(() => {
     loadCategories();
@@ -95,6 +97,7 @@ export default function Products({ user }) {
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     setSearchQuery(''); // Wyczyść wyszukiwanie przy zmianie kategorii
+    setCurrentPage(1); // Reset strony
     if (categoryId) {
       setSearchParams({ category: categoryId });
     } else {
@@ -103,6 +106,10 @@ export default function Products({ user }) {
   };
 
   const filteredProducts = products;
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   return (
     <div className="container" style={{ padding: '3rem 1rem' }}>
@@ -193,48 +200,129 @@ export default function Products({ user }) {
           <p>Brak produktów w tej kategorii</p>
         </div>
       ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          gap: '1.5rem'
-        }}>
-          {filteredProducts.map(product => (
-            <div 
-              key={product.id}
-              className="product-card"
-              onClick={() => navigate(`/product/${product.id}`)}
-            >
-              <div className="product-image">
-                {product.images && product.images[0] && (
-                  <img 
-                    src={product.images[0].image_url.startsWith('http') 
-                      ? product.images[0].image_url 
-                      : `http://localhost:3001${product.images[0].image_url}`}
-                    alt={product.title}
-                  />
-                )}
+        <>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '3rem'
+          }}>
+            {currentProducts.map(product => (
+              <div 
+                key={product.id}
+                className="product-card"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                <div className="product-image">
+                  {product.images && product.images[0] && (
+                    <img 
+                      src={product.images[0].image_url.startsWith('http') 
+                        ? product.images[0].image_url 
+                        : `http://localhost:3001${product.images[0].image_url}`}
+                      alt={product.title}
+                    />
+                  )}
+                </div>
+                <div className="product-info">
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                    {product.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    {product.category?.name}
+                  </p>
+                  <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                    {product.price} zł
+                  </p>
+                  <p style={{ 
+                    fontSize: '0.85rem', 
+                    color: product.stock_quantity > 0 ? '#4caf50' : '#f44336',
+                    marginTop: '0.5rem'
+                  }}>  
+                    {product.stock_quantity > 0 ? `Dostępne: ${product.stock_quantity} szt.` : 'Brak w magazynie'}
+                  </p>
+                </div>
               </div>
-              <div className="product-info">
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  {product.title}
-                </h3>
-                <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  {product.category?.name}
-                </p>
-                <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary-color)' }}>
-                  {product.price} zł
-                </p>
-                <p style={{ 
-                  fontSize: '0.85rem', 
-                  color: product.stock_quantity > 0 ? '#4caf50' : '#f44336',
-                  marginTop: '0.5rem'
-                }}>  
-                  {product.stock_quantity > 0 ? `Dostępne: ${product.stock_quantity} szt.` : 'Brak w magazynie'}
-                </p>
+            ))}
+          </div>
+
+          {/* Paginacja */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginTop: '2rem',
+              paddingBottom: '2rem'
+            }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: currentPage === 1 ? '#e5e7eb' : 'var(--primary-color)',
+                  color: currentPage === 1 ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                ← Poprzednia
+              </button>
+
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  // Pokaż tylko 5 stron na raz
+                  if (
+                    pageNum === 1 || 
+                    pageNum === totalPages || 
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          backgroundColor: currentPage === pageNum ? 'var(--primary-color)' : 'white',
+                          color: currentPage === pageNum ? 'white' : 'var(--primary-color)',
+                          border: '2px solid var(--primary-color)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          minWidth: '40px'
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} style={{ padding: '0.5rem' }}>...</span>;
+                  }
+                  return null;
+                })}
               </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: currentPage === totalPages ? '#e5e7eb' : 'var(--primary-color)',
+                  color: currentPage === totalPages ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Następna →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

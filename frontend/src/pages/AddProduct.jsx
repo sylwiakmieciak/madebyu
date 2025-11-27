@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CategoryBreadcrumb from '../components/CategoryBreadcrumb';
 import SimpleImageUpload from '../components/SimpleImageUpload';
+import RichTextEditor from '../components/RichTextEditor';
 import '../dashboard.css';
 
 export default function AddProduct({ user }) {
@@ -140,27 +141,10 @@ export default function AddProduct({ user }) {
 
         <div className="form-group">
           <label htmlFor="description">Opis produktu</label>
-          <textarea
-            id="description"
-            name="description"
+          <RichTextEditor
             value={formData.description}
             onChange={handleChange}
-            rows="6"
             placeholder="Opisz swoj produkt - materialy, wymiary, sposob wykonania..."
-            style={{
-              resize: 'vertical',
-              padding: '1rem',
-              border: '2px solid var(--border-color)',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              lineHeight: '1.6',
-              fontFamily: 'inherit',
-              transition: 'border-color 0.2s ease',
-              width: '100%',
-              minHeight: '150px'
-            }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
           />
         </div>
 

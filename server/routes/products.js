@@ -249,9 +249,10 @@ router.put('/:id/featured', authMiddleware, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id;
 
     const product = await Product.findOne({
-      where: { id, status: 'published' },
+      where: { id },
       include: [
         {
           model: User,
@@ -273,6 +274,17 @@ router.get('/:id', optionalAuth, async (req, res) => {
     });
 
     if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Sprawdź uprawnienia do wyświetlenia
+    const userFromDb = userId ? await User.findByPk(userId) : null;
+    const isOwner = userId && product.user_id === userId;
+    const isAdmin = userFromDb && (userFromDb.role === 'admin' || userFromDb.can_moderate_products);
+    const isPublished = product.status === 'published';
+
+    // Tylko właściciel, admin lub moderator może zobaczyć niepublikowane produkty
+    if (!isPublished && !isOwner && !isAdmin) {
       return res.status(404).json({ error: 'Product not found' });
     }
 

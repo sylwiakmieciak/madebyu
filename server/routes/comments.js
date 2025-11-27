@@ -59,18 +59,27 @@ router.post('/product/:productId', authMiddleware, async (req, res) => {
   }
 });
 
-// Pobierz komentarze dla produktu (zatwierdzone + własne niezatwierdzone)
+// Pobierz komentarze dla produktu (zatwierdzone + własne niezatwierdzone + wszystkie dla adminów/moderatorów)
 router.get('/product/:productId', optionalAuth, async (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user?.id; // Może być niezalogowany
+    const userRole = req.user?.role;
+    const canModerate = req.user?.can_moderate_comments;
 
     let whereConditions = {
       product_id: productId
     };
 
-    // Jeśli użytkownik jest zalogowany, pokaż zatwierdzone + jego własne niezatwierdzone
-    if (userId) {
+    // Jeśli użytkownik jest adminem lub moderatorem, pokaż wszystkie komentarze
+    if (userRole === 'admin' || canModerate) {
+      whereConditions = {
+        product_id: productId
+        // Bez filtrowania po approved - pokaż wszystkie
+      };
+    }
+    // Jeśli użytkownik jest zalogowany (ale nie admin/moderator), pokaż zatwierdzone + jego własne niezatwierdzone
+    else if (userId) {
       whereConditions = {
         product_id: productId,
         [Op.or]: [

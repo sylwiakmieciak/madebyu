@@ -4,6 +4,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import RichTextEditor from '../components/RichTextEditor';
 import '../dashboard.css';
 
 // Sortable Item Component
@@ -546,6 +547,15 @@ export default function Dashboard({ user, refreshUser }) {
   // Comments moderation states
   const [pendingComments, setPendingComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  
+  // Product edit states
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editProductData, setEditProductData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    stock_quantity: ''
+  });
   
   // Featured products sort state
   const [featuredSortBy, setFeaturedSortBy] = useState(() => {
@@ -1384,6 +1394,45 @@ export default function Dashboard({ user, refreshUser }) {
       console.error('Failed to delete theme:', error);
     }
   };
+
+  const handleEditProduct = (product, e) => {
+    e.stopPropagation();
+    setEditingProduct(product);
+    setEditProductData({
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      stock_quantity: product.stock_quantity
+    });
+  };
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editProductData)
+      });
+
+      if (response.ok) {
+        alert('Produkt zaktualizowany!');
+        setEditingProduct(null);
+        loadMyProducts();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Błąd podczas aktualizacji');
+      }
+    } catch (error) {
+      console.error('Update product error:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
@@ -1496,6 +1545,7 @@ export default function Dashboard({ user, refreshUser }) {
             <button
               onClick={() => setActiveTab('moderation')}
               className={`dashboard-tab ${activeTab === 'moderation' ? 'active' : ''}`}
+              data-tab="moderation"
             >
               Ogłoszenia {moderationStats?.pending > 0 && `(${moderationStats.pending})`}
             </button>
@@ -1668,6 +1718,30 @@ export default function Dashboard({ user, refreshUser }) {
                       display: 'flex',
                       gap: '0.5rem'
                     }}>
+                      <button
+                        type="button"
+                        onClick={(e) => handleEditProduct(product, e)}
+                        style={{
+                          flex: 1,
+                          padding: '0.5rem',
+                          backgroundColor: '#dbeafe',
+                          border: '2px solid #bfdbfe',
+                          borderRadius: '6px',
+                          color: '#1e40af',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#bfdbfe';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = '#dbeafe';
+                        }}
+                      >
+                        Edytuj
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -3092,8 +3166,9 @@ export default function Dashboard({ user, refreshUser }) {
               onClick={() => { setModerationStatus('pending'); loadModerationProducts('pending'); }}
               className="btn"
               style={{
-                backgroundColor: moderationStatus === 'pending' ? 'var(--accent-purple)' : 'var(--bg-cream)',
-                color: moderationStatus === 'pending' ? 'white' : 'var(--text-dark)'
+                backgroundColor: moderationStatus === 'pending' ? 'var(--primary-color)' : 'var(--bg-cream)',
+                color: moderationStatus === 'pending' ? 'white' : 'var(--text-dark)',
+                fontWeight: moderationStatus === 'pending' ? '600' : '400'
               }}
             >
               Oczekujące
@@ -3102,8 +3177,9 @@ export default function Dashboard({ user, refreshUser }) {
               onClick={() => { setModerationStatus('approved'); loadModerationProducts('approved'); }}
               className="btn"
               style={{
-                backgroundColor: moderationStatus === 'approved' ? 'var(--accent-purple)' : 'var(--bg-cream)',
-                color: moderationStatus === 'approved' ? 'white' : 'var(--text-dark)'
+                backgroundColor: moderationStatus === 'approved' ? 'var(--primary-color)' : 'var(--bg-cream)',
+                color: moderationStatus === 'approved' ? 'white' : 'var(--text-dark)',
+                fontWeight: moderationStatus === 'approved' ? '600' : '400'
               }}
             >
               Zaakceptowane
@@ -3112,8 +3188,9 @@ export default function Dashboard({ user, refreshUser }) {
               onClick={() => { setModerationStatus('rejected'); loadModerationProducts('rejected'); }}
               className="btn"
               style={{
-                backgroundColor: moderationStatus === 'rejected' ? 'var(--accent-purple)' : 'var(--bg-cream)',
-                color: moderationStatus === 'rejected' ? 'white' : 'var(--text-dark)'
+                backgroundColor: moderationStatus === 'rejected' ? 'var(--primary-color)' : 'var(--bg-cream)',
+                color: moderationStatus === 'rejected' ? 'white' : 'var(--text-dark)',
+                fontWeight: moderationStatus === 'rejected' ? '600' : '400'
               }}
             >
               Odrzucone
@@ -3143,23 +3220,44 @@ export default function Dashboard({ user, refreshUser }) {
                     overflow: 'hidden',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s'
                   }}
+                  onClick={() => window.open(`/product/${product.id}?from=moderation`, '_blank')}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  {product.ProductImages && product.ProductImages[0] && (
+                  {(product.images && product.images.length > 0) || (product.ProductImages && product.ProductImages.length > 0) ? (
                     <img
-                      src={`http://localhost:3001${product.ProductImages[0].image_url}`}
+                      src={`http://localhost:3001${product.images?.[0]?.image_url || product.ProductImages?.[0]?.image_url}`}
                       alt={product.title}
                       style={{ width: '100%', height: '200px', objectFit: 'cover' }}
                     />
+                  ) : (
+                    <div style={{ width: '100%', height: '200px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+                      Brak zdjęcia
+                    </div>
                   )}
                   <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{product.title}</h3>
-                    <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      Kategoria: {product.Category?.name || 'Brak'}
-                    </p>
-                    <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      Sprzedawca: {product.User?.username || 'Nieznany'}
+                    <p 
+                      style={{ 
+                        color: 'var(--primary-color)', 
+                        fontSize: '0.9rem', 
+                        marginBottom: '0.5rem',
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const slug = product.category?.slug || product.Category?.slug;
+                        if (slug) {
+                          window.location.href = `/products?category=${slug}`;
+                        }
+                      }}
+                    >
+                      {product.category?.name || product.Category?.name || 'Nieznana kategoria'}
                     </p>
                     <p style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '0.5rem' }}>
                       {product.price} zł
@@ -3182,9 +3280,12 @@ export default function Dashboard({ user, refreshUser }) {
                     )}
 
                     {moderationStatus === 'pending' && (
-                      <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => handleApproveProduct(product.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveProduct(product.id);
+                          }}
                           style={{
                             flex: 1,
                             padding: '0.75rem',
@@ -3199,7 +3300,10 @@ export default function Dashboard({ user, refreshUser }) {
                           Zaakceptuj
                         </button>
                         <button
-                          onClick={() => setSelectedProductForRejection(product.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProductForRejection(product.id);
+                          }}
                           style={{
                             flex: 1,
                             padding: '0.75rem',
@@ -3753,6 +3857,143 @@ export default function Dashboard({ user, refreshUser }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal edycji produktu */}
+      {editingProduct && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '700px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+              Edytuj produkt
+            </h2>
+            <form onSubmit={handleUpdateProduct}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  Tytuł
+                </label>
+                <input
+                  type="text"
+                  value={editProductData.title}
+                  onChange={(e) => setEditProductData({ ...editProductData, title: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  Opis
+                </label>
+                <RichTextEditor
+                  value={editProductData.description}
+                  onChange={(e) => setEditProductData({ ...editProductData, description: e.target.value })}
+                  placeholder="Opisz swój produkt..."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Cena (PLN)
+                  </label>
+                  <input
+                    type="number"
+                    value={editProductData.price}
+                    onChange={(e) => setEditProductData({ ...editProductData, price: e.target.value })}
+                    required
+                    min="0.01"
+                    step="0.01"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: '8px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Ilość sztuk
+                  </label>
+                  <input
+                    type="number"
+                    value={editProductData.stock_quantity}
+                    onChange={(e) => setEditProductData({ ...editProductData, stock_quantity: e.target.value })}
+                    required
+                    min="0"
+                    step="1"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: '8px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Zapisz zmiany
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
