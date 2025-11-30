@@ -1,6 +1,5 @@
-// ============================================
 // ORDER ITEM MODEL - Pozycje zamówienia
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

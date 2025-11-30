@@ -1,6 +1,5 @@
-// ============================================
 // MODELS INDEX - Import wszystkich modeli i relacje
-// ============================================
+
 const sequelize = require('../config/database');
 const User = require('./User');
 const Category = require('./Category');
@@ -17,9 +16,8 @@ const ProductComment = require('./ProductComment')(sequelize);
 const Slider = require('./Slider');
 const SliderProduct = require('./SliderProduct');
 
-// ============================================
+
 // RELATIONSHIPS - Relacje między modelami
-// ============================================
 
 // User -> Products (1:N)
 User.hasMany(Product, { foreignKey: 'user_id', as: 'products' });
@@ -109,9 +107,9 @@ SliderProduct.belongsTo(Slider, { foreignKey: 'slider_id', as: 'slider' });
 Product.hasMany(SliderProduct, { foreignKey: 'product_id', as: 'sliderProducts' });
 SliderProduct.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
-// ============================================
+
 // SYNC DATABASE - Synchronizacja z bazą
-// ============================================
+
 const syncDatabase = async (force = false) => {
   try {
     await sequelize.sync({ force }); // force: true = DROP & CREATE
@@ -130,9 +128,9 @@ const syncDatabase = async (force = false) => {
   }
 };
 
-// ============================================
+
 // SEED CATEGORIES - Dodaj podstawowe kategorie
-// ============================================
+
 const seedCategories = async () => {
   try {
     const count = await Category.count();
@@ -152,9 +150,9 @@ const seedCategories = async () => {
   }
 };
 
-// ============================================
+
 // SEED THEMES - Dodaj domyślne motywy
-// ============================================
+
 const seedThemes = async () => {
   try {
     const count = await Theme.count();
@@ -222,9 +220,9 @@ const seedThemes = async () => {
   }
 };
 
-// ============================================
+
 // SEED ADMIN - Dodaj admina (hasło: admin123)
-// ============================================
+
 const seedAdmin = async () => {
   try {
     const bcrypt = require('bcryptjs');

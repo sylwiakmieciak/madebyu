@@ -1,6 +1,5 @@
-// ============================================
 // MADEBYU BACKEND SERVER
-// ============================================
+
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -16,9 +15,9 @@ const passport = require('./config/passport');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ============================================
+
 // MIDDLEWARE
-// ============================================
+
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
@@ -53,13 +52,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
   next();
 });
 
-// ============================================
+
 // ROUTES
-// ============================================
+
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
@@ -90,9 +88,9 @@ app.use('/api/sliders', sliderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/cart', cartRoutes);
 
-// ============================================
+
 // HEALTH CHECK
-// ============================================
+
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -101,24 +99,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============================================
+
 // 404 HANDLER
-// ============================================
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// ============================================
+
 // ERROR HANDLER
-// ============================================
+
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ============================================
+
 // START SERVER
-// ============================================
+
 app.listen(PORT, async () => {
   console.log(`
 ╔════════════════════════════════════════╗

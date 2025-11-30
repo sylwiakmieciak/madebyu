@@ -1,6 +1,5 @@
-// ============================================
 // SLIDER PRODUCT MODEL - Produkty w slajderze
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

@@ -1216,8 +1216,6 @@ export default function Dashboard({ user, refreshUser }) {
             },
             body: JSON.stringify({ products })
           });
-          
-          console.log('Kolejność zapisana w slajderze', activeSlider.id);
         }
       } catch (error) {
         console.error('Failed to reorder products:', error);
@@ -1232,8 +1230,6 @@ export default function Dashboard({ user, refreshUser }) {
       
       if (!currentStatus) {
         // Dodajemy produkt do wyboru redakcji
-        console.log('Dodawanie produktu', productId, 'do featured');
-        
         // Najpierw ustaw is_featured
         const featuredResponse = await fetch(`http://localhost:3001/api/products/${productId}/featured`, {
           method: 'PUT',
@@ -1250,16 +1246,13 @@ export default function Dashboard({ user, refreshUser }) {
 
         // Znajdź aktywny slajder
         const activeSlider = allSliders.find(s => s.is_active);
-        console.log('Aktywny slajder:', activeSlider);
+
         
         if (activeSlider) {
           // Dodaj produkt do aktywnego slajdera
           const maxOrder = featuredProducts.length > 0 
             ? Math.max(...featuredProducts.map(p => p.display_order || 0))
             : -1;
-          
-          console.log('Dodawanie do slajdera', activeSlider.id, 'na pozycji', maxOrder + 1);
-          
           const sliderResponse = await fetch(`http://localhost:3001/api/sliders/${activeSlider.id}/products`, {
             method: 'POST',
             headers: {
@@ -1284,8 +1277,6 @@ export default function Dashboard({ user, refreshUser }) {
         }
       } else {
         // Usuwamy produkt z wyboru redakcji
-        console.log('Usuwanie produktu', productId, 'z featured');
-        
         const featuredResponse = await fetch(`http://localhost:3001/api/products/${productId}/featured`, {
           method: 'PUT',
           headers: {
@@ -1546,12 +1537,12 @@ export default function Dashboard({ user, refreshUser }) {
 
   const createTheme = async (e) => {
     e.preventDefault();
-    console.log('=== CREATE THEME (Frontend) ===');
-    console.log('Theme data:', newTheme);
+
+
     
     try {
       const token = localStorage.getItem('token');
-      console.log('Token exists:', !!token);
+
       
       const response = await fetch('http://localhost:3001/api/themes', {
         method: 'POST',
@@ -1562,9 +1553,9 @@ export default function Dashboard({ user, refreshUser }) {
         body: JSON.stringify(newTheme)
       });
 
-      console.log('Response status:', response.status);
+
       const data = await response.json();
-      console.log('Response data:', data);
+
 
       if (response.ok) {
         console.log('[OK] Theme created successfully');
@@ -1584,21 +1575,21 @@ export default function Dashboard({ user, refreshUser }) {
   };
 
   const setDefaultTheme = async (themeId) => {
-    console.log('=== SET DEFAULT THEME (Frontend) ===');
-    console.log('Theme ID:', themeId);
+
+
     
     try {
       const token = localStorage.getItem('token');
-      console.log('Token exists:', !!token);
+
       
       const response = await fetch(`http://localhost:3001/api/themes/${themeId}/default`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      console.log('Response status:', response.status);
+
       const data = await response.json();
-      console.log('Response data:', data);
+
 
       if (response.ok) {
         console.log('[OK] Default theme set successfully');

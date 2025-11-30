@@ -1,6 +1,5 @@
-// ============================================
 // USER MODEL - Model użytkownika
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

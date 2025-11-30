@@ -1,15 +1,14 @@
-// ============================================
 // CATEGORY ROUTES - Lista kategorii
-// ============================================
+
 const express = require('express');
 const { Category } = require('../models');
 const { authMiddleware, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/categories - Wszystkie kategorie (drzewo)
-// ============================================
+
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
@@ -42,9 +41,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/categories/admin/all - Wszystkie kategorie dla admina
-// ============================================
+
 router.get('/admin/all', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const categories = await Category.findAll({
@@ -60,9 +59,9 @@ router.get('/admin/all', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/categories/:id - Szczegoly kategorii
-// ============================================
+
 router.get('/:id', async (req, res) => {
   try {
     const category = await Category.findByPk(req.params.id, {
@@ -88,9 +87,9 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/categories - Dodaj kategorie (ADMIN)
-// ============================================
+
 router.post('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { name, parent_id, description, icon } = req.body;
@@ -123,9 +122,9 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/categories/:id - Edytuj kategorie (ADMIN)
-// ============================================
+
 router.put('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { name, parent_id, description, icon, display_order, is_active } = req.body;
@@ -169,9 +168,9 @@ router.put('/:id', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/categories/:id - Usuń kategorie (ADMIN)
-// ============================================
+
 router.delete('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const category = await Category.findByPk(req.params.id);

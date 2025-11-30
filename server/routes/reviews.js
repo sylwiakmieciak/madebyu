@@ -1,15 +1,14 @@
-// ============================================
 // REVIEW ROUTES - Oceny sprzedawców
-// ============================================
+
 const express = require('express');
 const { Review, User, Order, OrderItem, Product } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/reviews/seller/:userId - Pobierz oceny sprzedawcy
-// ============================================
+
 router.get('/seller/:userId', async (req, res) => {
   try {
     const reviews = await Review.findAll({
@@ -57,9 +56,9 @@ router.get('/seller/:userId', async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/reviews/product/:productId - Pobierz oceny produktu
-// ============================================
+
 router.get('/product/:productId', async (req, res) => {
   try {
     const { productId } = req.params;

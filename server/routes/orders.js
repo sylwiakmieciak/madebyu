@@ -1,6 +1,5 @@
-// ============================================
 // ORDER ROUTES - Zamówienia
-// ============================================
+
 const express = require('express');
 const { Order, OrderItem, Product, User, ProductImage, Notification, Review } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
@@ -8,15 +7,13 @@ const { sendOrderConfirmationEmail } = require('../config/email');
 
 const router = express.Router();
 
-// ============================================
+
 // POST /api/orders - Utwórz nowe zamówienie
-// ============================================
+
 router.post('/', authMiddleware, async (req, res) => {
   const transaction = await require('../config/database').transaction();
   
   try {
-    console.log('=== CREATE ORDER REQUEST ===');
-    console.log('User:', req.user?.id);
     console.log('Body:', JSON.stringify(req.body, null, 2));
     
     const {
@@ -44,14 +41,9 @@ router.post('/', authMiddleware, async (req, res) => {
 
     // Pobierz produkty
     const productIds = items.map(item => item.product_id);
-    console.log('Looking for products:', productIds);
-    
     const products = await Product.findAll({
       where: { id: productIds, status: 'published' }
     });
-    
-    console.log('Found products:', products.length);
-
     if (products.length !== items.length) {
       await transaction.rollback();
       console.log('ERROR: Product count mismatch');
@@ -172,9 +164,6 @@ router.post('/', authMiddleware, async (req, res) => {
         }
       ]
     });
-
-    console.log('Order created successfully:', fullOrder.id);
-
     // Wyślij email z potwierdzeniem zamówienia
     try {
       const emailData = {
@@ -218,9 +207,9 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/orders/my - Moje zamówienia
-// ============================================
+
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     const orders = await Order.findAll({
@@ -269,9 +258,9 @@ router.get('/my', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/orders/sales/my - Zamówienia do wysyłki (dla sprzedawcy)
-// ============================================
+
 router.get('/sales/my', authMiddleware, async (req, res) => {
   try {
     // Znajdź wszystkie OrderItems gdzie seller_id = req.user.id
@@ -329,9 +318,9 @@ router.get('/sales/my', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/orders/:id - Szczegóły zamówienia
-// ============================================
+
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const order = await Order.findOne({
@@ -379,9 +368,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/orders/:id/ship - Potwierdź wysyłkę (sprzedawca)
-// ============================================
+
 router.put('/:id/ship', authMiddleware, async (req, res) => {
   try {
     const order = await Order.findOne({
@@ -423,9 +412,9 @@ router.put('/:id/ship', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/orders/:id/confirm-delivery - Potwierdź otrzymanie przesyłki
-// ============================================
+
 router.put('/:id/confirm-delivery', authMiddleware, async (req, res) => {
   try {
     const order = await Order.findOne({
@@ -471,20 +460,12 @@ router.put('/:id/confirm-delivery', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/orders/:id/review - Dodaj ocenę sprzedawcy
-// ============================================
+
 router.post('/:id/review', authMiddleware, async (req, res) => {
-  console.log('===== REVIEW ENDPOINT HIT =====');
-  console.log('Request params:', req.params);
-  console.log('Request body:', req.body);
-  console.log('Request user:', req.user ? req.user.id : 'NO USER');
-  
   try {
     const { seller_id, rating, comment } = req.body;
-
-    console.log('Review request:', { order_id: req.params.id, seller_id, rating, buyer_id: req.user.id });
-
     // Walidacja
     if (!seller_id || !rating || rating < 1 || rating > 5) {
       console.log('Validation failed');
@@ -504,11 +485,7 @@ router.post('/:id/review', authMiddleware, async (req, res) => {
         required: false
       }]
     });
-
-    console.log('Order found:', order ? 'yes' : 'no');
     if (order) {
-      console.log('Order status:', order.status);
-      console.log('Order items:', order.items?.length);
     }
 
     if (!order) {
@@ -540,9 +517,6 @@ router.post('/:id/review', authMiddleware, async (req, res) => {
       rating,
       comment: comment || null
     });
-
-    console.log('Review created:', review.id);
-
     // Powiadom sprzedawcę
     await Notification.create({
       user_id: seller_id,
@@ -563,9 +537,9 @@ router.post('/:id/review', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/orders/my-purchases - Pobierz zakupy użytkownika
-// ============================================
+
 router.get('/my-purchases', authMiddleware, async (req, res) => {
   try {
     const orders = await Order.findAll({
@@ -612,9 +586,9 @@ router.get('/my-purchases', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/orders/admin/all - Wszystkie zamówienia (admin/moderator)
-// ============================================
+
 router.get('/admin/all', authMiddleware, async (req, res) => {
   try {
     // Sprawdź uprawnienia
@@ -666,9 +640,9 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/orders/admin/:id/status - Zmień status zamówienia (admin/moderator)
-// ============================================
+
 router.put('/admin/:id/status', authMiddleware, async (req, res) => {
   try {
     // Sprawdź uprawnienia

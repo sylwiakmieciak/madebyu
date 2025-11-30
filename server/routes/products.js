@@ -1,15 +1,14 @@
-// ============================================
 // PRODUCT ROUTES - Lista produktow, szczegoly
-// ============================================
+
 const express = require('express');
 const { Product, ProductImage, User, Category, Slider, SliderProduct, sequelize } = require('../models');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/products - Lista produktow
-// ============================================
+
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const { category, categories, search, seller, limit = 12, offset = 0 } = req.query;
@@ -113,9 +112,9 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/products/my - Produkty uzytkownika
-// ============================================
+
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     const products = await Product.findAll({
@@ -146,9 +145,9 @@ router.get('/my', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/products/featured - Get featured products
-// ============================================
+
 router.get('/featured', async (req, res) => {
   try {
     // Pobierz aktywny slajder wraz z produktami
@@ -264,9 +263,9 @@ router.get('/featured', async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/products/:id/featured - Toggle featured status (admin only)
-// ============================================
+
 router.put('/:id/featured', authMiddleware, async (req, res) => {
   try {
     // Check if user is admin
@@ -297,9 +296,9 @@ router.put('/:id/featured', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/products/:id - Szczegoly produktu
-// ============================================
+
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -352,9 +351,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/products/:id/view - Zwiększ licznik wyświetleń
-// ============================================
+
 router.post('/:id/view', async (req, res) => {
   try {
     const { id } = req.params;
@@ -377,9 +376,9 @@ router.post('/:id/view', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/products - Dodaj produkt (wymaga auth)
-// ============================================
+
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { title, description, price, category_id, stock_quantity, images } = req.body;
@@ -432,9 +431,9 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/products/:id - Edytuj produkt
-// ============================================
+
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -474,9 +473,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/products/:id/restore - Przywróć produkt z archiwum
-// ============================================
+
 router.put('/:id/restore', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -511,9 +510,9 @@ router.put('/:id/restore', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/products/:id - Usun produkt
-// ============================================
+
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -536,9 +535,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/products/featured/reorder - Zmień kolejność featured products (Admin only)
-// ============================================
+
 router.put('/featured/reorder', authMiddleware, async (req, res) => {
   try {
     // Sprawdź czy użytkownik jest adminem
@@ -570,9 +569,9 @@ router.put('/featured/reorder', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/products/:id/featured - Toggle featured status (Admin only)
-// ============================================
+
 router.put('/:id/featured', authMiddleware, async (req, res) => {
   try {
     // Sprawdź czy użytkownik jest adminem

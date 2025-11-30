@@ -10,12 +10,6 @@ router.post('/product/:productId', authMiddleware, async (req, res) => {
     const { productId } = req.params;
     const { comment } = req.body;
     const userId = req.user.id;
-
-    console.log('=== ADD COMMENT REQUEST ===');
-    console.log('Product ID:', productId);
-    console.log('User ID:', userId);
-    console.log('Comment:', comment);
-
     if (!comment || !comment.trim()) {
       console.log('ERROR: Empty comment');
       return res.status(400).json({ message: 'Komentarz nie może być pusty' });
@@ -27,18 +21,12 @@ router.post('/product/:productId', authMiddleware, async (req, res) => {
       console.log('ERROR: Product not found');
       return res.status(404).json({ message: 'Produkt nie znaleziony' });
     }
-
-    console.log('Product found:', product.title);
-
     const newComment = await ProductComment.create({
       product_id: productId,
       user_id: userId,
       comment: comment.trim(),
       approved: false
     });
-
-    console.log('Comment created:', newComment.id);
-
     // Pobierz komentarz z danymi użytkownika
     const commentWithUser = await ProductComment.findByPk(newComment.id, {
       include: [{
@@ -187,12 +175,6 @@ router.get('/admin/pending', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await User.findByPk(userId);
-
-    console.log('=== ADMIN PENDING COMMENTS REQUEST ===');
-    console.log('User ID:', userId);
-    console.log('User role:', user?.role);
-    console.log('Can moderate comments:', user?.can_moderate_comments);
-
     if (!user || (user.role !== 'admin' && !user.can_moderate_comments)) {
       console.log('Access denied - not authorized');
       return res.status(403).json({ message: 'Brak uprawnień' });
@@ -214,15 +196,7 @@ router.get('/admin/pending', authMiddleware, async (req, res) => {
       ],
       order: [['created_at', 'DESC']]
     });
-
-    console.log('Found pending comments:', pendingComments.length);
     if (pendingComments.length > 0) {
-      console.log('Sample comment:', {
-        id: pendingComments[0].id,
-        comment: pendingComments[0].comment,
-        approved: pendingComments[0].approved,
-        product: pendingComments[0].product?.title
-      });
     }
 
     res.json({

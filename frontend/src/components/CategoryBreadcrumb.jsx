@@ -16,15 +16,15 @@ export default function CategoryBreadcrumb({ onCategorySelect, selectedCategory 
       const response = await fetch('http://localhost:3001/api/categories');
       const data = await response.json();
       
-      console.log('Odpowiedź API:', data);
+
       
       // Użyj flat zamiast tree, aby mieć płaską listę wszystkich kategorii
       const flatCategories = data.flat || [];
-      console.log('Płaska lista kategorii:', flatCategories);
+
       
       setAllCategories(flatCategories);
       const mainCategories = flatCategories.filter(cat => cat.parent_id === null || cat.parent_id === undefined);
-      console.log('Główne kategorie:', mainCategories);
+
       setCurrentLevel(mainCategories);
       setLoading(false);
     } catch (error) {
@@ -34,31 +34,31 @@ export default function CategoryBreadcrumb({ onCategorySelect, selectedCategory 
   };
 
   const handleCategoryClick = (category) => {
-    console.log('Kliknięto kategorię:', category);
+
     const children = allCategories.filter(cat => cat.parent_id === category.id);
-    console.log('Znalezione podkategorie (parent_id=' + category.id + '):', children);
+
     
     if (children.length > 0) {
       setCurrentLevel(children);
       setBreadcrumb([...breadcrumb, category]);
     } else {
-      console.log('Wybrano końcową kategorię:', category);
+
       onCategorySelect(category);
     }
   };
 
   const handleBreadcrumbClick = (index) => {
-    console.log('Kliknięto breadcrumb na index:', index);
+
     if (index === -1) {
       const mainCategories = allCategories.filter(cat => cat.parent_id === null || cat.parent_id === undefined);
-      console.log('Powrót do głównych kategorii:', mainCategories);
+
       setCurrentLevel(mainCategories);
       setBreadcrumb([]);
     } else {
       const category = breadcrumb[index];
-      console.log('Powrót do kategorii:', category);
+
       const children = allCategories.filter(cat => cat.parent_id === category.id);
-      console.log('Podkategorie tej kategorii:', children);
+
       setCurrentLevel(children);
       setBreadcrumb(breadcrumb.slice(0, index + 1));
     }

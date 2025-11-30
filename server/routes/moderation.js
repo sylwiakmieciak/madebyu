@@ -1,6 +1,5 @@
-// ============================================
 // MODERATION ROUTES - System moderacji
-// ============================================
+
 const express = require('express');
 const { Product, User, Category, ProductImage, Notification } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
@@ -16,9 +15,9 @@ const moderatorMiddleware = async (req, res, next) => {
   }
 };
 
-// ============================================
+
 // GET /api/moderation/products - Pobierz produkty do moderacji
-// ============================================
+
 router.get('/products', authMiddleware, moderatorMiddleware, async (req, res) => {
   try {
     const { status = 'pending' } = req.query;
@@ -67,9 +66,9 @@ router.get('/products', authMiddleware, moderatorMiddleware, async (req, res) =>
   }
 });
 
-// ============================================
+
 // PUT /api/moderation/products/:id/approve - Zaakceptuj produkt
-// ============================================
+
 router.put('/products/:id/approve', authMiddleware, moderatorMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -115,9 +114,9 @@ router.put('/products/:id/approve', authMiddleware, moderatorMiddleware, async (
   }
 });
 
-// ============================================
+
 // PUT /api/moderation/products/:id/reject - Odrzuć produkt
-// ============================================
+
 router.put('/products/:id/reject', authMiddleware, moderatorMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -168,9 +167,9 @@ router.put('/products/:id/reject', authMiddleware, moderatorMiddleware, async (r
   }
 });
 
-// ============================================
+
 // GET /api/moderation/stats - Statystyki moderacji
-// ============================================
+
 router.get('/stats', authMiddleware, moderatorMiddleware, async (req, res) => {
   try {
     const where = {};

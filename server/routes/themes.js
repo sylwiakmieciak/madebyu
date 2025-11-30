@@ -1,15 +1,14 @@
-// ============================================
 // THEME ROUTES - Zarządzanie motywami
-// ============================================
+
 const express = require('express');
 const { Theme, UserTheme } = require('../models');
 const { authMiddleware, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/themes - Wszystkie aktywne motywy
-// ============================================
+
 router.get('/', async (req, res) => {
   try {
     const themes = await Theme.findAll({
@@ -25,14 +24,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/themes - Stwórz nowy motyw (ADMIN)
-// ============================================
+
 router.post('/', authMiddleware, requireAdmin, async (req, res) => {
-  console.log('=== CREATE THEME REQUEST ===');
-  console.log('User:', req.user);
-  console.log('Body:', req.body);
-  
   try {
     const { name, primary_color, secondary_color, accent_color } = req.body;
 
@@ -49,8 +44,6 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
     }
 
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    console.log('Creating theme with slug:', slug);
-
     const theme = await Theme.create({
       name,
       slug,
@@ -59,8 +52,6 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
       accent_color,
       created_by: req.user.id
     });
-
-    console.log('[OK] Theme created:', theme.id);
     res.status(201).json({ message: 'Theme created', theme });
   } catch (error) {
     console.error('❌ Create theme error:', error);
@@ -68,14 +59,10 @@ router.post('/', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/themes/:id/default - Ustaw jako domyślny (ADMIN)
-// ============================================
+
 router.put('/:id/default', authMiddleware, requireAdmin, async (req, res) => {
-  console.log('=== SET DEFAULT THEME REQUEST ===');
-  console.log('Theme ID:', req.params.id);
-  console.log('User:', req.user);
-  
   try {
     const { id } = req.params;
 
@@ -92,8 +79,6 @@ router.put('/:id/default', authMiddleware, requireAdmin, async (req, res) => {
 
     theme.is_default = true;
     await theme.save();
-    console.log('[OK] Set theme as default:', theme.name);
-
     res.json({ message: 'Default theme updated', theme });
   } catch (error) {
     console.error('❌ Set default theme error:', error);
@@ -101,9 +86,9 @@ router.put('/:id/default', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/themes/:id - Usuń motyw (ADMIN)
-// ============================================
+
 router.delete('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,9 +110,9 @@ router.delete('/:id', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/themes/my - Pobierz motyw użytkownika
-// ============================================
+
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     const userTheme = await UserTheme.findOne({
@@ -152,9 +137,9 @@ router.get('/my', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/themes/select - Wybierz motyw
-// ============================================
+
 router.post('/select', authMiddleware, async (req, res) => {
   try {
     const { theme_id } = req.body;

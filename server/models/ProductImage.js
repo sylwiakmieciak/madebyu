@@ -1,6 +1,5 @@
-// ============================================
 // PRODUCT IMAGE MODEL - Zdjęcia produktów
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

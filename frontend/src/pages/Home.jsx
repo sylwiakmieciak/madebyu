@@ -66,7 +66,7 @@ export default function Home() {
     try {
       const response = await fetch('http://localhost:3001/api/sliders/active');
       const data = await response.json();
-      console.log('Active slider loaded:', data);
+
       setFeaturedProducts(data.products || []);
     } catch (error) {
       console.error('Błąd ładowania slajdera:', error);
@@ -93,7 +93,7 @@ export default function Home() {
   };
 
   const addToCart = (productId) => {
-    console.log('Dodano do koszyka:', productId);
+
   };
 
   return (

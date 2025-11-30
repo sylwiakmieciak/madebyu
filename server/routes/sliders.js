@@ -1,14 +1,13 @@
-// ============================================
 // SLIDERS ROUTES - Endpointy dla slajderów
-// ============================================
+
 const express = require('express');
 const router = express.Router();
 const { Slider, SliderProduct, Product, ProductImage, User } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
 
-// ============================================
+
 // GET /api/sliders - Pobierz wszystkie slajdery (admin)
-// ============================================
+
 router.get('/', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -68,9 +67,9 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/sliders/active - Pobierz aktywny slajder (publiczny)
-// ============================================
+
 router.get('/active', async (req, res) => {
   try {
     const slider = await Slider.findOne({
@@ -119,9 +118,9 @@ router.get('/active', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/sliders - Utwórz nowy slajder (admin)
-// ============================================
+
 router.post('/', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -153,9 +152,9 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/sliders/:id/activate - Ustaw slajder jako aktywny (admin)
-// ============================================
+
 router.put('/:id/activate', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -181,9 +180,9 @@ router.put('/:id/activate', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/sliders/:id - Usuń slajder (admin)
-// ============================================
+
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -203,9 +202,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/sliders/:id/products - Dodaj produkt do slajdera (admin)
-// ============================================
+
 router.post('/:id/products', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -256,9 +255,9 @@ router.post('/:id/products', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/sliders/:id/products/:productId - Usuń produkt ze slajdera (admin)
-// ============================================
+
 router.delete('/:id/products/:productId', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -284,9 +283,9 @@ router.delete('/:id/products/:productId', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/sliders/:id/products/reorder - Zmień kolejność produktów (admin)
-// ============================================
+
 router.put('/:id/products/reorder', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {

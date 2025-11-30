@@ -90,9 +90,9 @@ export default function Checkout() {
         }))
       };
 
-      console.log('Sending order:', orderData);
+
       const response = await api.post('/orders', orderData);
-      console.log('Order response:', response);
+
       
       // Wyczyść koszyk
       localStorage.removeItem('cart');

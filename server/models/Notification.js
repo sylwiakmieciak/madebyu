@@ -1,6 +1,5 @@
-// ============================================
 // NOTIFICATION MODEL - Model powiadomień
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

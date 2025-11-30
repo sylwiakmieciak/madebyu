@@ -1,6 +1,5 @@
-// ============================================
 // AUTH ROUTES - Rejestracja, Logowanie
-// ============================================
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -44,9 +43,9 @@ const upload = multer({
   }
 });
 
-// ============================================
+
 // POST /api/auth/register - Rejestracja
-// ============================================
+
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -102,9 +101,9 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/auth/login - Logowanie
-// ============================================
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -154,9 +153,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/auth/me - Pobierz dane użytkownika
-// ============================================
+
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -179,9 +178,9 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/auth/user/:userId - Pobierz publiczny profil użytkownika
-// ============================================
+
 router.get('/user/:userId', async (req, res) => {
   try {
     const user = await User.findByPk(req.params.userId, {
@@ -200,9 +199,9 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/auth/upload-avatar - Upload avatara
-// ============================================
+
 router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
@@ -211,9 +210,6 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
 
     // Zwróć pełny URL do pliku
     const avatar_url = `http://localhost:3001/uploads/avatars/${req.file.filename}`;
-    
-    console.log('Avatar uploaded:', avatar_url);
-    
     res.json({ 
       message: 'Zdjęcie przesłane pomyślnie',
       avatar_url 
@@ -225,9 +221,9 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
   }
 });
 
-// ============================================
+
 // PUT /api/auth/profile - Aktualizuj profil użytkownika
-// ============================================
+
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { username, full_name, avatar_url, bio, greeting } = req.body;
@@ -284,9 +280,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GOOGLE OAUTH
-// ============================================
+
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
@@ -324,9 +320,9 @@ router.get('/google/callback',
   }
 );
 
-// ============================================
+
 // GITHUB OAUTH
-// ============================================
+
 router.get('/github',
   passport.authenticate('github', { scope: ['user:email'] })
 );

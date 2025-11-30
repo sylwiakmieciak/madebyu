@@ -1,6 +1,5 @@
-// ============================================
 // PASSPORT CONFIG - Google & GitHub OAuth
-// ============================================
+
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
@@ -21,9 +20,9 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// ============================================
+
 // GOOGLE STRATEGY
-// ============================================
+
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -79,9 +78,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   }));
 }
 
-// ============================================
+
 // GITHUB STRATEGY
-// ============================================
+
 if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,

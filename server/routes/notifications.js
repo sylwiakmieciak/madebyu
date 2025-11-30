@@ -1,15 +1,14 @@
-// ============================================
 // NOTIFICATION ROUTES - Powiadomienia
-// ============================================
+
 const express = require('express');
 const { Notification, Order } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/notifications - Pobierz powiadomienia użytkownika
-// ============================================
+
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const notifications = await Notification.findAll({
@@ -34,9 +33,9 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/notifications/:id/read - Oznacz jako przeczytane
-// ============================================
+
 router.put('/:id/read', authMiddleware, async (req, res) => {
   try {
     const notification = await Notification.findOne({
@@ -65,9 +64,9 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/notifications/read-all - Oznacz wszystkie jako przeczytane
-// ============================================
+
 router.put('/read-all', authMiddleware, async (req, res) => {
   try {
     await Notification.update(
@@ -91,9 +90,9 @@ router.put('/read-all', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // GET /api/notifications/unread-count - Liczba nieprzeczytanych
-// ============================================
+
 router.get('/unread-count', authMiddleware, async (req, res) => {
   try {
     const count = await Notification.count({

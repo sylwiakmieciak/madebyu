@@ -1,6 +1,5 @@
-// ============================================
 // REVIEW MODEL - Oceny sprzedawców
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

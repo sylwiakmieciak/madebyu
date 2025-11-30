@@ -1,16 +1,15 @@
-// ============================================
 // CART ROUTES - Zarządzanie koszykiem
-// ============================================
+
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { Product, ProductImage } = require('../models');
 
 const router = express.Router();
 
-// ============================================
+
 // GET /api/cart
 // Pobierz koszyk użytkownika
-// ============================================
+
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { sequelize } = require('../models');
@@ -50,10 +49,10 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/cart/sync
 // Synchronizuj koszyk z localStorage
-// ============================================
+
 router.post('/sync', authMiddleware, async (req, res) => {
   try {
     const { cart } = req.body;
@@ -91,10 +90,10 @@ router.post('/sync', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/cart/:productId
 // Zaktualizuj ilość produktu w koszyku
-// ============================================
+
 router.put('/:productId', authMiddleware, async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -133,10 +132,10 @@ router.put('/:productId', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/cart/:productId
 // Usuń produkt z koszyka
-// ============================================
+
 router.delete('/:productId', authMiddleware, async (req, res) => {
   try {
     const { sequelize } = require('../models');
@@ -158,10 +157,10 @@ router.delete('/:productId', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // DELETE /api/cart
 // Wyczyść cały koszyk
-// ============================================
+
 router.delete('/', authMiddleware, async (req, res) => {
   try {
     const { sequelize } = require('../models');

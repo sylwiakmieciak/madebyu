@@ -29,9 +29,9 @@ export default function Notifications() {
         api.get('/orders/my')
       ]);
       
-      console.log('Notifications data:', notifData);
-      console.log('Orders data:', ordersData);
-      console.log('My orders data:', myOrdersData);
+
+
+
       
       setNotifications(notifData.notifications || []);
       setSalesOrders(ordersData.orders || []);
@@ -109,21 +109,13 @@ export default function Notifications() {
       alert('Wybierz ocenę od 1 do 5 gwiazdek');
       return;
     }
-
-    console.log('Submitting review:', {
-      orderId: reviewModal.orderId,
-      seller_id: reviewModal.sellerId,
-      rating,
-      comment
-    });
-
     try {
       const response = await api.post(`/orders/${reviewModal.orderId}/review`, {
         seller_id: reviewModal.sellerId,
         rating,
         comment
       });
-      console.log('Review response:', response);
+
       alert('Ocena dodana pomyślnie!');
       setReviewModal(null);
       loadData();
@@ -143,15 +135,10 @@ export default function Notifications() {
       return;
     }
 
-    console.log('Submitting product comment:', {
-      productId: commentModal.productId,
-      comment: productComment.trim()
-    });
-
     try {
       const token = localStorage.getItem('token');
       const url = `http://localhost:3001/api/comments/product/${commentModal.productId}`;
-      console.log('Request URL:', url);
+
       
       const response = await fetch(url, {
         method: 'POST',
@@ -162,9 +149,9 @@ export default function Notifications() {
         body: JSON.stringify({ comment: productComment.trim() })
       });
 
-      console.log('Response status:', response.status);
+
       const data = await response.json();
-      console.log('Response data:', data);
+
 
       if (!response.ok) {
         throw new Error(data.message || 'Błąd podczas dodawania komentarza');

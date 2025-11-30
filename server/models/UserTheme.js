@@ -1,6 +1,5 @@
-// ============================================
 // USER THEME MODEL - Wybrane motywy użytkowników
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

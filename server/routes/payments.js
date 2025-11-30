@@ -1,6 +1,5 @@
-// ============================================
 // PAYMENT ROUTES - Płatności Stripe
-// ============================================
+
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { authMiddleware } = require('../middleware/auth');
@@ -20,10 +19,10 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ============================================
+
 // POST /api/payments/create-checkout-session
 // Tworzy sesję płatności Stripe
-// ============================================
+
 router.post('/create-checkout-session', authMiddleware, async (req, res) => {
   try {
     const { order_id } = req.body;
@@ -104,10 +103,10 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // POST /api/payments/webhook
 // Webhook Stripe - OPCJONALNY (tylko dla produkcji)
-// ============================================
+
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   // Webhook działa tylko jeśli jest skonfigurowany STRIPE_WEBHOOK_SECRET
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
@@ -137,7 +136,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     case 'payment_intent.succeeded':
       const paymentIntent = event.data.object;
-      console.log('PaymentIntent succeeded:', paymentIntent.id);
       break;
 
     case 'payment_intent.payment_failed':
@@ -152,9 +150,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   res.json({ received: true });
 });
 
-// ============================================
+
 // Pomocnicze funkcje
-// ============================================
 
 // Obsługa udanej płatności
 async function handleCheckoutSessionCompleted(session) {
@@ -272,17 +269,15 @@ async function sendPaymentConfirmationEmail(order) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('Payment confirmation email sent to:', order.shipping_email);
-
   } catch (error) {
     console.error('Send payment confirmation email error:', error);
   }
 }
 
-// ============================================
+
 // GET /api/payments/verify-session/:sessionId
 // Weryfikuje status sesji płatności
-// ============================================
+
 router.get('/verify-session/:sessionId', authMiddleware, async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);

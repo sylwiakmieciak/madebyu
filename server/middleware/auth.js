@@ -1,29 +1,19 @@
-// ============================================
-// AUTH MIDDLEWARE - JWT Verification
-// ============================================
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
-  console.log('===== AUTH MIDDLEWARE =====');
-  console.log('Path:', req.path);
-  console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
-  
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    console.log('Token valid, user:', decoded.id);
-    req.user = decoded; // { id, email, username, role }
+    req.user = decoded;
     next();
   } catch (error) {
-    console.log('Token error:', error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired' });
     }

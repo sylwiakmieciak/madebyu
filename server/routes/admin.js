@@ -1,6 +1,5 @@
-// ============================================
 // ADMIN ROUTES - Zarządzanie systemem
-// ============================================
+
 const express = require('express');
 const { User, Category } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
@@ -16,9 +15,9 @@ const adminMiddleware = (req, res, next) => {
   }
 };
 
-// ============================================
+
 // GET /api/admin/users - Pobierz listę użytkowników
-// ============================================
+
 router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const users = await User.findAll({
@@ -39,9 +38,9 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
+
 // PUT /api/admin/users/:id/moderator - Ustaw/usuń uprawnienia moderatora
-// ============================================
+
 router.put('/users/:id/moderator', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -73,9 +72,9 @@ router.put('/users/:id/moderator', authMiddleware, adminMiddleware, async (req, 
   }
 });
 
-// ============================================
+
 // PUT /api/admin/users/:id/permissions - Zarządzaj uprawnieniami użytkownika
-// ============================================
+
 router.put('/users/:id/permissions', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,9 +107,9 @@ router.put('/users/:id/permissions', authMiddleware, adminMiddleware, async (req
   }
 });
 
-// ============================================
+
 // GET /api/admin/categories - Pobierz wszystkie kategorie (dla wyboru moderacji)
-// ============================================
+
 router.get('/categories', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const categories = await Category.findAll({

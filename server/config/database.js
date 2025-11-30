@@ -1,6 +1,5 @@
-// ============================================
 // SEQUELIZE CONFIG - ORM Database Connection
-// ============================================
+
 const { Sequelize } = require('sequelize');
 const path = require('path');
 

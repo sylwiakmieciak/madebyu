@@ -1,6 +1,5 @@
-// ============================================
 // THEME MODEL - Model motywów
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

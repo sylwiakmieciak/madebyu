@@ -1,6 +1,5 @@
-// ============================================
 // PRODUCT MODEL - Model produktu
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 

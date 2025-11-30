@@ -1,6 +1,5 @@
-// ============================================
 // SLIDER MODEL - Model slajdera
-// ============================================
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
