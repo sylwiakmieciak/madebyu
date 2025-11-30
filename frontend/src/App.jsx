@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import AddProduct from './pages/AddProduct';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import PaymentSuccess from './pages/PaymentSuccess';
 import Notifications from './pages/Notifications';
 import UserProfile from './pages/UserProfile';
 import AuthCallback from './pages/AuthCallback';
@@ -207,6 +208,7 @@ function App() {
           <Route path="/product/:id" element={<ProductDetails user={user} />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/user/:userId" element={<UserProfile />} />
           <Route path="/login" element={<Login setUser={setUser} />} />

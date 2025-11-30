@@ -4467,17 +4467,20 @@ export default function Dashboard({ user, refreshUser }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
                       <div>
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                          Zamówienie #{order.id}
+                          Zamówienie #{order.order_number}
                         </h3>
                         <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
                           Data: {new Date(order.created_at).toLocaleDateString('pl-PL')} • 
                           Status: <span style={{ 
                             fontWeight: 600,
-                            color: order.status === 'completed' ? '#10b981' : '#f59e0b'
+                            color: order.payment_status === 'paid' ? '#10b981' : order.payment_status === 'pending' ? '#f59e0b' : '#ef4444'
                           }}>
-                            {order.status === 'completed' ? 'Zrealizowane' : 'W trakcie'}
+                            {order.payment_status === 'paid' ? 'Opłacone' : order.payment_status === 'pending' ? 'Oczekuje na płatność' : 'Błąd płatności'}
                           </span>
                         </p>
+                      </div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                        {parseFloat(order.total_amount).toFixed(2)} zł
                       </div>
                     </div>
 
@@ -4508,6 +4511,46 @@ export default function Dashboard({ user, refreshUser }) {
                         </p>
                       </div>
                     </div>
+
+                    {order.payment_status === 'pending' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            const response = await fetch('http://localhost:3001/api/payments/create-checkout-session', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ order_id: order.id })
+                            });
+                            
+                            const data = await response.json();
+                            if (response.ok && data.url) {
+                              // Przekieruj do Stripe
+                              window.location.href = data.url;
+                            } else {
+                              alert(data.error || 'Błąd podczas tworzenia sesji płatności');
+                            }
+                          } catch (error) {
+                            console.error('Payment error:', error);
+                            alert('Wystąpił błąd. Spróbuj ponownie.');
+                          }
+                        }}
+                        className="btn"
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          padding: '1rem',
+                          fontSize: '1.1rem',
+                          fontWeight: 700
+                        }}
+                      >
+                        💳 Zapłać teraz
+                      </button>
+                    )}
 
                     {order.status === 'completed' && !order.review_submitted && (
                       <button

@@ -69,6 +69,14 @@ const Order = sequelize.define('Order', {
     type: DataTypes.STRING(255),
     allowNull: true
   },
+  stripe_payment_intent_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  stripe_session_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
   // Order status
   status: {
     type: DataTypes.ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled'),

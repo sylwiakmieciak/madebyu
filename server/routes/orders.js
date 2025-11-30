@@ -207,7 +207,10 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    await transaction.rollback();
+    // Rollback tylko jeśli transakcja nie została jeszcze zakończona
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     console.error('=== CREATE ORDER ERROR ===');
     console.error('Error:', error);
     console.error('Stack:', error.stack);

@@ -23,6 +23,13 @@ app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
 }));
+
+// WAŻNE: Webhook Stripe musi być PRZED express.json()
+app.post('/api/payments/webhook', 
+  express.raw({ type: 'application/json' }), 
+  require('./routes/payments')
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -65,6 +72,7 @@ const moderationRoutes = require('./routes/moderation');
 const adminRoutes = require('./routes/admin');
 const commentRoutes = require('./routes/comments');
 const sliderRoutes = require('./routes/sliders');
+const paymentRoutes = require('./routes/payments');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -78,6 +86,7 @@ app.use('/api/moderation', moderationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/sliders', sliderRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ============================================
 // HEALTH CHECK

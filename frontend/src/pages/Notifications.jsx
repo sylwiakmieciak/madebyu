@@ -490,6 +490,14 @@ export default function Notifications() {
                       <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>
                         Suma: {order.total_amount} zł
                       </p>
+                      <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        Status płatności: <span style={{ 
+                          fontWeight: 600,
+                          color: order.payment_status === 'paid' ? '#10b981' : order.payment_status === 'pending' ? '#f59e0b' : '#ef4444'
+                        }}>
+                          {order.payment_status === 'paid' ? 'Opłacone' : order.payment_status === 'pending' ? 'Oczekuje na płatność' : 'Błąd płatności'}
+                        </span>
+                      </p>
                     </div>
                     {getStatusBadge(order.status)}
                   </div>
@@ -534,6 +542,55 @@ export default function Notifications() {
 
                   {/* Przyciski akcji */}
                   <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    {/* Przycisk płatności dla zamówień pending */}
+                    {order.payment_status === 'pending' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            const response = await fetch('http://localhost:3001/api/payments/create-checkout-session', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ order_id: order.id })
+                            });
+                            
+                            const data = await response.json();
+                            if (response.ok && data.url) {
+                              window.location.href = data.url;
+                            } else {
+                              alert(data.error || 'Błąd podczas tworzenia sesji płatności');
+                            }
+                          } catch (error) {
+                            console.error('Payment error:', error);
+                            alert('Wystąpił błąd. Spróbuj ponownie.');
+                          }
+                        }}
+                        style={{
+                          flex: '1 1 100%',
+                          padding: '1.25rem',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '1.1rem',
+                          fontWeight: 700,
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#2563eb';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = '#3b82f6';
+                        }}
+                      >
+                        💳 Zapłać teraz ({parseFloat(order.total_amount).toFixed(2)} zł)
+                      </button>
+                    )}
+                    
                     {order.status === 'shipped' && (
                       <button
                         onClick={() => handleConfirmDelivery(order.id)}
