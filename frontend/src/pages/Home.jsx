@@ -64,13 +64,12 @@ export default function Home() {
 
   const loadFeaturedProducts = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/products/featured');
+      const response = await fetch('http://localhost:3001/api/sliders/active');
       const data = await response.json();
-      console.log('Featured products loaded:', data.products);
-      console.log('Featured products length:', data.products?.length);
+      console.log('Active slider loaded:', data);
       setFeaturedProducts(data.products || []);
     } catch (error) {
-      console.error('Błąd ładowania wyróżnionych produktów:', error);
+      console.error('Błąd ładowania slajdera:', error);
       setFeaturedProducts([]);
     }
   };
@@ -337,7 +336,6 @@ export default function Home() {
             className="categories-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(8, 1fr)',
               gap: '1.5rem',
               marginTop: '3rem'
             }}

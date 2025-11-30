@@ -515,6 +515,8 @@ export default function Dashboard({ user, refreshUser }) {
   const [profileData, setProfileData] = useState({
     username: user?.username || '',
     full_name: user?.full_name || '',
+    first_name: user?.first_name || '',
+    last_name: user?.last_name || '',
     bio: user?.bio || '',
     avatar_url: user?.avatar_url || '',
     greeting: user?.greeting || 'Witaj na moim profilu! 👋'
@@ -557,15 +559,46 @@ export default function Dashboard({ user, refreshUser }) {
     stock_quantity: ''
   });
   
+  // Orders management states
+  const [allOrders, setAllOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null);
+  
+  // Sliders management states
+  const [allSliders, setAllSliders] = useState([]);
+  const [newSliderName, setNewSliderName] = useState('');
+  
   // Featured products sort state
   const [featuredSortBy, setFeaturedSortBy] = useState(() => {
     return localStorage.getItem('featuredSortBy') || 'manual';
   });
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' && featuredProducts.length > 0) {
       localStorage.setItem('featuredSortBy', featuredSortBy);
-      loadFeaturedProducts(featuredSortBy);
+      
+      // Dla różnych sortowań, posortuj lokalne produkty
+      const sorted = [...featuredProducts];
+      switch (featuredSortBy) {
+        case 'created_at':
+          sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          break;
+        case 'featured_at':
+          sorted.sort((a, b) => {
+            const dateA = a.featured_at ? new Date(a.featured_at) : new Date(0);
+            const dateB = b.featured_at ? new Date(b.featured_at) : new Date(0);
+            return dateB - dateA;
+          });
+          break;
+        case 'views_count':
+          sorted.sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
+          break;
+        case 'manual':
+          // Dla manual, sortuj po display_order
+          sorted.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+          break;
+      }
+      setFeaturedProducts(sorted);
     }
   }, [featuredSortBy]);
 
@@ -584,11 +617,14 @@ export default function Dashboard({ user, refreshUser }) {
         loadPendingComments();
         loadModerationStats();
         loadModerationProducts();
+        loadAllOrders();
+        loadAllSliders();
       } else {
         // Load specific resources based on permissions
         if (user.can_moderate_products) {
           loadModerationStats();
           loadModerationProducts();
+          loadAllOrders();
         }
         if (user.can_moderate_comments) {
           loadPendingComments();
@@ -932,6 +968,120 @@ export default function Dashboard({ user, refreshUser }) {
     }
   };
 
+  const loadAllOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/orders/admin/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAllOrders(data.orders || []);
+      } else {
+        console.error('Failed to load orders:', data.message);
+      }
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, statusField, newValue) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/orders/admin/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ [statusField]: newValue })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        alert('Status zamówienia został zaktualizowany');
+        loadAllOrders(); // Przeładuj listę zamówień
+      } else {
+        alert(data.message || 'Błąd podczas aktualizacji statusu');
+      }
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      alert('Wystąpił błąd podczas aktualizacji');
+    }
+  };
+
+  // ============================================
+  // SLIDERS MANAGEMENT
+  // ============================================
+  
+  const loadAllSliders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/sliders', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setAllSliders(data.sliders || []);
+    } catch (error) {
+      console.error('Failed to load sliders:', error);
+    }
+  };
+
+  const activateSlider = async (sliderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/sliders/${sliderId}/activate`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        await loadAllSliders();
+        
+        // Załaduj produkty z aktywowanego slajdera
+        const slidersResponse = await fetch('http://localhost:3001/api/sliders', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const slidersData = await slidersResponse.json();
+        const activatedSlider = slidersData.sliders.find(s => s.id === sliderId);
+        
+        if (activatedSlider && activatedSlider.Products) {
+          setFeaturedProducts(activatedSlider.Products);
+        }
+        
+        alert('Slajder aktywowany! Produkty załadowane.');
+      }
+    } catch (error) {
+      console.error('Activate slider error:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
+  const deleteSlider = async (sliderId) => {
+    if (!confirm('Czy na pewno chcesz usunąć ten slajder?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/sliders/${sliderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        loadAllSliders();
+        alert('Slajder usunięty');
+      }
+    } catch (error) {
+      console.error('Delete slider error:', error);
+      alert('Wystąpił błąd');
+    }
+  };
+
   const handleSubmitReview = async () => {
     if (!selectedOrderForReview) return;
 
@@ -1047,21 +1197,31 @@ export default function Dashboard({ user, refreshUser }) {
       const newOrder = arrayMove(featuredProducts, oldIndex, newIndex);
       setFeaturedProducts(newOrder);
 
-      // Zapisz nową kolejność na serwerze
+      // Zapisz nową kolejność w aktywnym slajderze
       try {
         const token = localStorage.getItem('token');
-        await fetch('http://localhost:3001/api/products/featured/reorder', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            productIds: newOrder.map(p => p.id)
-          })
-        });
+        const activeSlider = allSliders.find(s => s.is_active);
+        
+        if (activeSlider) {
+          const products = newOrder.map((p, index) => ({
+            product_id: p.id,
+            display_order: index
+          }));
+          
+          await fetch(`http://localhost:3001/api/sliders/${activeSlider.id}/products/reorder`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ products })
+          });
+          
+          console.log('Kolejność zapisana w slajderze', activeSlider.id);
+        }
       } catch (error) {
         console.error('Failed to reorder products:', error);
+        alert('Błąd zapisywania kolejności');
       }
     }
   };
@@ -1069,21 +1229,101 @@ export default function Dashboard({ user, refreshUser }) {
   const toggleProductFeatured = async (productId, currentStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/products/${productId}/featured`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ is_featured: !currentStatus })
-      });
+      
+      if (!currentStatus) {
+        // Dodajemy produkt do wyboru redakcji
+        console.log('Dodawanie produktu', productId, 'do featured');
+        
+        // Najpierw ustaw is_featured
+        const featuredResponse = await fetch(`http://localhost:3001/api/products/${productId}/featured`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ is_featured: true })
+        });
 
-      if (response.ok) {
-        loadFeaturedProducts();
-        loadAllProducts();
+        if (!featuredResponse.ok) {
+          throw new Error('Nie udało się dodać do featured');
+        }
+
+        // Znajdź aktywny slajder
+        const activeSlider = allSliders.find(s => s.is_active);
+        console.log('Aktywny slajder:', activeSlider);
+        
+        if (activeSlider) {
+          // Dodaj produkt do aktywnego slajdera
+          const maxOrder = featuredProducts.length > 0 
+            ? Math.max(...featuredProducts.map(p => p.display_order || 0))
+            : -1;
+          
+          console.log('Dodawanie do slajdera', activeSlider.id, 'na pozycji', maxOrder + 1);
+          
+          const sliderResponse = await fetch(`http://localhost:3001/api/sliders/${activeSlider.id}/products`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              product_id: productId,
+              display_order: maxOrder + 1
+            })
+          });
+
+          if (!sliderResponse.ok) {
+            const error = await sliderResponse.json();
+            console.error('Błąd dodawania do slajdera:', error);
+            throw new Error(error.error || 'Nie udało się dodać do slajdera');
+          }
+          
+          alert('Produkt dodany do wyboru redakcji!');
+        } else {
+          alert('Produkt dodany do featured, ale nie ma aktywnego slajdera');
+        }
+      } else {
+        // Usuwamy produkt z wyboru redakcji
+        console.log('Usuwanie produktu', productId, 'z featured');
+        
+        const featuredResponse = await fetch(`http://localhost:3001/api/products/${productId}/featured`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ is_featured: false })
+        });
+
+        if (!featuredResponse.ok) {
+          throw new Error('Nie udało się usunąć z featured');
+        }
+
+        // Usuń z aktywnego slajdera jeśli jest
+        const activeSlider = allSliders.find(s => s.is_active);
+        if (activeSlider) {
+          const sliderResponse = await fetch(`http://localhost:3001/api/sliders/${activeSlider.id}/products/${productId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (!sliderResponse.ok) {
+            console.error('Błąd usuwania ze slajdera');
+          }
+        }
+        
+        alert('Produkt usunięty z wyboru redakcji');
       }
+
+      // Odśwież dane
+      console.log('Odświeżanie danych...');
+      await loadAllSliders();
+      loadFeaturedProducts();
+      loadAllProducts();
+      
     } catch (error) {
       console.error('Failed to toggle featured:', error);
+      alert('Wystąpił błąd: ' + error.message);
     }
   };
 
@@ -1482,8 +1722,8 @@ export default function Dashboard({ user, refreshUser }) {
               padding: '0.75rem 2rem',
               fontSize: '1.1rem',
               fontWeight: 700,
-              background: activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories' ? 'var(--primary-color)' : 'transparent',
-              color: activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories' ? 'white' : 'var(--text-dark)',
+              background: activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories' || activeTab === 'orders' ? 'var(--primary-color)' : 'transparent',
+              color: activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories' || activeTab === 'orders' ? 'white' : 'var(--text-dark)',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer'
@@ -1531,7 +1771,7 @@ export default function Dashboard({ user, refreshUser }) {
       )}
 
       {/* Sub-tabs for "Zaplecze" (Admin only) */}
-      {(user.role === 'admin' || user.can_moderate_products || user.can_moderate_comments || user.can_manage_themes) && (activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories') && (
+      {(user.role === 'admin' || user.can_moderate_products || user.can_moderate_comments || user.can_manage_themes) && (activeTab === 'admin' || activeTab === 'moderation' || activeTab === 'comments' || activeTab === 'featured' || activeTab === 'users' || activeTab === 'categories' || activeTab === 'orders') && (
         <div className="dashboard-tabs" style={{ marginBottom: '2rem' }}>
           {(user.role === 'admin' || user.can_manage_themes) && (
             <button
@@ -1556,6 +1796,14 @@ export default function Dashboard({ user, refreshUser }) {
               className={`dashboard-tab ${activeTab === 'comments' ? 'active' : ''}`}
             >
               Komentarze {pendingComments.length > 0 && `(${pendingComments.length})`}
+            </button>
+          )}
+          {(user.role === 'admin' || user.can_moderate_products) && (
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`dashboard-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            >
+              Zamówienia {allOrders.length > 0 && `(${allOrders.length})`}
             </button>
           )}
           {user.role === 'admin' && (
@@ -2118,6 +2366,64 @@ export default function Dashboard({ user, refreshUser }) {
                   />
                 </div>
 
+                {/* First Name */}
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: '180px 1fr',
+                  gap: '1.5rem',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem',
+                  padding: '1.25rem',
+                  backgroundColor: 'var(--bg-light)',
+                  borderRadius: '10px'
+                }}>
+                  <label style={{ fontWeight: 600, color: 'var(--text-color)', fontSize: '0.95rem' }}>
+                    Imię
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.first_name}
+                    onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
+                    placeholder="Opcjonalne"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: '8px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
+
+                {/* Last Name */}
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: '180px 1fr',
+                  gap: '1.5rem',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem',
+                  padding: '1.25rem',
+                  backgroundColor: 'var(--bg-light)',
+                  borderRadius: '10px'
+                }}>
+                  <label style={{ fontWeight: 600, color: 'var(--text-color)', fontSize: '0.95rem' }}>
+                    Nazwisko
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.last_name}
+                    onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
+                    placeholder="Opcjonalne"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: '8px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
+
                 {/* Bio */}
                 <div style={{ 
                   display: 'grid',
@@ -2160,6 +2466,8 @@ export default function Dashboard({ user, refreshUser }) {
                       setProfileData({
                         username: user?.username || '',
                         full_name: user?.full_name || '',
+                        first_name: user?.first_name || '',
+                        last_name: user?.last_name || '',
                         bio: user?.bio || '',
                         avatar_url: user?.avatar_url || '',
                         greeting: user?.greeting || 'Witaj na moim profilu! 👋'
@@ -2696,6 +3004,269 @@ export default function Dashboard({ user, refreshUser }) {
         </div>
       )}
 
+      {/* Orders Tab (Admin or moderators with can_moderate_products) */}
+      {activeTab === 'orders' && (user.role === 'admin' || user.can_moderate_products) && (
+        <div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+            Zarządzanie Zamówieniami
+            {allOrders.length > 0 && (
+              <span style={{ 
+                marginLeft: '1rem', 
+                fontSize: '1rem', 
+                color: '#3b82f6',
+                background: '#dbeafe',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '999px'
+              }}>
+                {allOrders.length} zamówień
+              </span>
+            )}
+          </h2>
+
+          {loadingOrders ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <p>Ładowanie zamówień...</p>
+            </div>
+          ) : allOrders.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem', 
+              background: '#f9fafb',
+              borderRadius: '12px',
+              border: '2px dashed #d1d5db'
+            }}>
+              <p style={{ fontSize: '1.1rem', color: '#6b7280' }}>
+                Brak zamówień w systemie
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {allOrders.map((order) => {
+                const statusColors = {
+                  pending: { bg: '#fef3c7', text: '#92400e', label: 'Oczekuje' },
+                  confirmed: { bg: '#dbeafe', text: '#1e40af', label: 'Potwierdzone' },
+                  shipped: { bg: '#e0e7ff', text: '#4338ca', label: 'Wysłane' },
+                  delivered: { bg: '#d1fae5', text: '#065f46', label: 'Dostarczone' },
+                  cancelled: { bg: '#fee2e2', text: '#991b1b', label: 'Anulowane' }
+                };
+
+                const paymentColors = {
+                  pending: { bg: '#fef3c7', text: '#92400e', label: 'Oczekuje' },
+                  paid: { bg: '#d1fae5', text: '#065f46', label: 'Opłacone' },
+                  failed: { bg: '#fee2e2', text: '#991b1b', label: 'Błąd' },
+                  refunded: { bg: '#e5e7eb', text: '#374151', label: 'Zwrot' }
+                };
+
+                const status = statusColors[order.status] || statusColors.pending;
+                const payment = paymentColors[order.payment_status] || paymentColors.pending;
+
+                return (
+                  <div 
+                    key={order.id}
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    {/* Header with Order Number and Date */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'start',
+                      marginBottom: '1rem',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid #e5e7eb'
+                    }}>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                          Zamówienie #{order.order_number}
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+                          {new Date(order.created_at).toLocaleString('pl-PL')}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                          {parseFloat(order.total_amount || 0).toFixed(2)} zł
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Buyer Info */}
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
+                        Kupujący:
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.95rem' }}>
+                        <p style={{ margin: 0 }}>
+                          <strong>{order.buyer?.username || 'Nieznany'}</strong> ({order.buyer?.email || 'brak email'})
+                        </p>
+                        <p style={{ margin: 0, color: '#6b7280' }}>
+                          {order.shipping_name}, {order.shipping_address}, {order.shipping_postal_code} {order.shipping_city}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
+                        Produkty:
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {order.items?.map((item) => (
+                          <div 
+                            key={item.id}
+                            style={{
+                              display: 'flex',
+                              gap: '1rem',
+                              padding: '0.75rem',
+                              background: '#f9fafb',
+                              borderRadius: '8px',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {item.product?.images?.[0] && (
+                              <img
+                                src={item.product.images[0].image_url.startsWith('http') 
+                                  ? item.product.images[0].image_url 
+                                  : `http://localhost:3001${item.product.images[0].image_url}`}
+                                alt={item.product.title}
+                                style={{ 
+                                  width: '50px', 
+                                  height: '50px', 
+                                  objectFit: 'cover', 
+                                  borderRadius: '6px' 
+                                }}
+                              />
+                            )}
+                            <div style={{ flex: 1 }}>
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem' }}>
+                                {item.product?.title || 'Produkt usunięty'}
+                              </p>
+                              <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+                                Sprzedawca: {item.seller?.username || 'Nieznany'}
+                              </p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+                                {item.quantity} szt. × {parseFloat(item.price || 0).toFixed(2)} zł
+                              </p>
+                              <p style={{ margin: 0, fontWeight: 600 }}>
+                                {(item.quantity * parseFloat(item.price || 0)).toFixed(2)} zł
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Status Management */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr', 
+                      gap: '1rem',
+                      marginTop: '1rem',
+                      paddingTop: '1rem',
+                      borderTop: '1px solid #e5e7eb'
+                    }}>
+                      {/* Order Status */}
+                      <div>
+                        <label style={{ 
+                          display: 'block', 
+                          fontSize: '0.85rem', 
+                          fontWeight: 600, 
+                          color: '#374151',
+                          marginBottom: '0.5rem' 
+                        }}>
+                          Status zamówienia
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{
+                            background: status.bg,
+                            color: status.text,
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            flex: '0 0 auto'
+                          }}>
+                            {status.label}
+                          </span>
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateOrderStatus(order.id, 'status', e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              fontSize: '0.9rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="pending">Oczekuje</option>
+                            <option value="confirmed">Potwierdzone</option>
+                            <option value="shipped">Wysłane</option>
+                            <option value="delivered">Dostarczone</option>
+                            <option value="cancelled">Anulowane</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Payment Status */}
+                      <div>
+                        <label style={{ 
+                          display: 'block', 
+                          fontSize: '0.85rem', 
+                          fontWeight: 600, 
+                          color: '#374151',
+                          marginBottom: '0.5rem' 
+                        }}>
+                          Status płatności
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{
+                            background: payment.bg,
+                            color: payment.text,
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            flex: '0 0 auto'
+                          }}>
+                            {payment.label}
+                          </span>
+                          <select
+                            value={order.payment_status}
+                            onChange={(e) => updateOrderStatus(order.id, 'payment_status', e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              fontSize: '0.9rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="pending">Oczekuje</option>
+                            <option value="paid">Opłacone</option>
+                            <option value="failed">Błąd płatności</option>
+                            <option value="refunded">Zwrot środków</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Motywy Tab (Admin or users with permission) */}
       {activeTab === 'admin' && (user.role === 'admin' || user.can_manage_themes) && (
         <div>
@@ -2827,6 +3398,212 @@ export default function Dashboard({ user, refreshUser }) {
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem' }}>
             Zarządzanie Wyborem Redakcji
           </h2>
+
+          {/* Zapisz aktualny slider */}
+          <div style={{ 
+            marginBottom: '2rem', 
+            padding: '1.5rem', 
+            backgroundColor: 'white', 
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
+              Zapisz aktualny wybór jako slajder
+            </h3>
+            <p style={{ color: 'var(--text-light)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Zapisz aktualny wybór redakcji ({featuredProducts.length} produktów) jako nowy slajder, aby móc później do niego wrócić.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
+                  Nazwa slajdera
+                </label>
+                <input
+                  type="text"
+                  value={newSliderName}
+                  onChange={(e) => setNewSliderName(e.target.value)}
+                  placeholder="np. Promocja Zimowa 2024"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!newSliderName.trim()) {
+                    alert('Podaj nazwę slajdera');
+                    return;
+                  }
+                  if (featuredProducts.length === 0) {
+                    alert('Najpierw dodaj produkty do wyboru redakcji');
+                    return;
+                  }
+
+                  try {
+                    const token = localStorage.getItem('token');
+                    // Utwórz nowy slajder
+                    const createResponse = await fetch('http://localhost:3001/api/sliders', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ name: newSliderName })
+                    });
+
+                    if (!createResponse.ok) {
+                      const data = await createResponse.json();
+                      alert(data.error || 'Błąd podczas tworzenia slajdera');
+                      return;
+                    }
+
+                    const { slider } = await createResponse.json();
+
+                    // Dodaj wszystkie produkty do slajdera
+                    for (let i = 0; i < featuredProducts.length; i++) {
+                      await fetch(`http://localhost:3001/api/sliders/${slider.id}/products`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                          product_id: featuredProducts[i].id,
+                          display_order: i
+                        })
+                      });
+                    }
+
+                    // Aktywuj nowy slajder
+                    await fetch(`http://localhost:3001/api/sliders/${slider.id}/activate`, {
+                      method: 'PUT',
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
+
+                    setNewSliderName('');
+                    loadAllSliders();
+                    alert('Slajder zapisany i aktywowany!');
+                  } catch (error) {
+                    console.error('Save slider error:', error);
+                    alert('Wystąpił błąd podczas zapisywania');
+                  }
+                }}
+                disabled={featuredProducts.length === 0}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: featuredProducts.length === 0 ? '#e5e7eb' : 'var(--primary-color)',
+                  color: featuredProducts.length === 0 ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  cursor: featuredProducts.length === 0 ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Zapisz jako slajder
+              </button>
+            </div>
+          </div>
+
+          {/* Wybór aktywnego slajdera */}
+          <div style={{ 
+            marginBottom: '2rem', 
+            padding: '1.5rem', 
+            backgroundColor: 'white', 
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
+              Zapisane slajdery
+            </h3>
+            {allSliders.length === 0 ? (
+              <p style={{ color: 'var(--text-light)' }}>
+                Brak zapisanych slajderów. Zapisz aktualny wybór redakcji jako slajder powyżej.
+              </p>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {allSliders.map((slider) => (
+                    <div
+                      key={slider.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        padding: '1rem',
+                        backgroundColor: slider.is_active ? '#d1fae5' : '#f9fafb',
+                        border: slider.is_active ? '2px solid #10b981' : '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="activeSlider"
+                        checked={slider.is_active}
+                        onChange={() => activateSlider(slider.id)}
+                        style={{ cursor: 'pointer', width: '20px', height: '20px' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '1.05rem' }}>
+                            {slider.name}
+                          </span>
+                          {slider.is_active && (
+                            <span style={{
+                              padding: '0.25rem 0.75rem',
+                              background: '#065f46',
+                              color: 'white',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600
+                            }}>
+                              AKTYWNY
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', margin: '0.25rem 0 0 0' }}>
+                          Produktów: {slider.Products?.length || 0}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(`Usunąć slajder "${slider.name}"?`)) {
+                            deleteSlider(slider.id);
+                          }
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#fee2e2',
+                          color: '#991b1b',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ 
+                  marginTop: '1rem', 
+                  fontSize: '0.9rem', 
+                  color: 'var(--text-light)' 
+                }}>
+                  Kliknij opcję, aby przełączyć się na wybrany slajder. Jego produkty będą wyświetlane na stronie głównej.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Sort options */}
           <div style={{ 

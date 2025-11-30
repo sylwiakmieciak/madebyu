@@ -2,7 +2,7 @@
 // PRODUCT ROUTES - Lista produktow, szczegoly
 // ============================================
 const express = require('express');
-const { Product, ProductImage, User, Category, sequelize } = require('../models');
+const { Product, ProductImage, User, Category, Slider, SliderProduct, sequelize } = require('../models');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -151,7 +151,61 @@ router.get('/my', authMiddleware, async (req, res) => {
 // ============================================
 router.get('/featured', async (req, res) => {
   try {
-    const { sortBy = 'manual' } = req.query; // manual, created_at, featured_at, views_count
+    // Pobierz aktywny slajder wraz z produktami
+    const activeSlider = await Slider.findOne({
+      where: { is_active: true },
+      include: [
+        {
+          model: SliderProduct,
+          as: 'sliderProducts',
+          separate: true, // Użyj separate query żeby uniknąć złożonych JOIN
+          include: [
+            {
+              model: Product,
+              as: 'product',
+              where: { status: 'published' },
+              required: true,
+              include: [
+                {
+                  model: User,
+                  as: 'seller',
+                  attributes: ['username', 'avatar_url', 'bio']
+                },
+                {
+                  model: Category,
+                  as: 'category',
+                  attributes: ['name', 'slug']
+                },
+                {
+                  model: ProductImage,
+                  as: 'images',
+                  attributes: ['image_url', 'is_primary'],
+                  required: false
+                }
+              ]
+            }
+          ],
+          order: [['display_order', 'ASC']]
+        }
+      ]
+    });
+
+    // Jeśli jest aktywny slajder, zwróć jego produkty
+    if (activeSlider && activeSlider.sliderProducts) {
+      const products = activeSlider.sliderProducts
+        .filter(sp => sp.product)
+        .map(sp => {
+          const product = sp.product.toJSON();
+          product.display_order = sp.display_order;
+          return product;
+        })
+        .sort((a, b) => a.display_order - b.display_order);
+
+      return res.json({ products });
+    }
+
+    // Fallback: jeśli nie ma aktywnego slajdera, zwróć produkty z is_featured
+    const { sortBy = 'manual' } = req.query;
     
     let orderClause = [];
     

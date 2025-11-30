@@ -33,6 +33,37 @@ export default function Checkout() {
     } else {
       navigate('/cart');
     }
+
+    // Pobierz dane użytkownika i wypełnij formularz
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const user = data.user;
+          
+          // Automatycznie wypełnij dane
+          const name = user.first_name && user.last_name 
+            ? `${user.first_name} ${user.last_name}`
+            : user.full_name || user.username || '';
+            
+          setFormData(prev => ({
+            ...prev,
+            shipping_name: name,
+            shipping_email: user.email || ''
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+
+    fetchUserData();
   }, [navigate]);
 
   const handleChange = (e) => {
@@ -65,6 +96,7 @@ export default function Checkout() {
       
       // Wyczyść koszyk
       localStorage.removeItem('cart');
+      window.dispatchEvent(new Event('cartUpdated'));
       
       // Przekieruj do potwierdzenia
       alert('Zamówienie zostało złożone! Numer: ' + response.order.order_number);

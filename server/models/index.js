@@ -14,6 +14,8 @@ const Gallery = require('./Gallery');
 const Notification = require('./Notification');
 const Review = require('./Review');
 const ProductComment = require('./ProductComment')(sequelize);
+const Slider = require('./Slider');
+const SliderProduct = require('./SliderProduct');
 
 // ============================================
 // RELATIONSHIPS - Relacje między modelami
@@ -94,6 +96,18 @@ ProductComment.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 // User -> ProductComments (1:N)
 User.hasMany(ProductComment, { foreignKey: 'user_id', as: 'productComments' });
 ProductComment.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+
+// User (creator) -> Sliders (1:N)
+User.hasMany(Slider, { foreignKey: 'created_by', as: 'createdSliders' });
+Slider.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// Slider -> SliderProducts (1:N)
+Slider.hasMany(SliderProduct, { foreignKey: 'slider_id', as: 'sliderProducts' });
+SliderProduct.belongsTo(Slider, { foreignKey: 'slider_id', as: 'slider' });
+
+// Product -> SliderProducts (1:N)
+Product.hasMany(SliderProduct, { foreignKey: 'product_id', as: 'sliderProducts' });
+SliderProduct.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 // ============================================
 // SYNC DATABASE - Synchronizacja z bazą
@@ -245,5 +259,7 @@ module.exports = {
   Notification,
   Review,
   ProductComment,
+  Slider,
+  SliderProduct,
   syncDatabase
 };

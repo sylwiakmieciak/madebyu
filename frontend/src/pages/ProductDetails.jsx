@@ -246,6 +246,7 @@ export default function ProductDetails({ user }) {
     
     // Zapisz koszyk
     localStorage.setItem('cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
     
     // Pokaż komunikat
     alert('Produkt dodany do koszyka!');

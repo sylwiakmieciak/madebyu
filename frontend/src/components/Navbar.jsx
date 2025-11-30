@@ -9,11 +9,14 @@ export default function Navbar({ user, onLogout }) {
   const [showCategories, setShowCategories] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const closeTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadCategories();
+    loadCartCount();
+    
     if (user) {
       loadUnreadCount();
       // Odświeżaj co 30 sekund
@@ -27,6 +30,34 @@ export default function Navbar({ user, onLogout }) {
       };
     }
   }, [user]);
+
+  useEffect(() => {
+    // Nasłuchuj na zmiany w koszyku
+    const handleCartUpdate = () => loadCartCount();
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    window.addEventListener('storage', handleCartUpdate);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+      window.removeEventListener('storage', handleCartUpdate);
+    };
+  }, []);
+
+  const loadCartCount = () => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        const cart = JSON.parse(savedCart);
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        setCartCount(totalItems);
+      } else {
+        setCartCount(0);
+      }
+    } catch (error) {
+      console.error('Błąd ładowania koszyka:', error);
+      setCartCount(0);
+    }
+  };
 
   const loadUnreadCount = async () => {
     try {
@@ -218,7 +249,32 @@ export default function Navbar({ user, onLogout }) {
 
           {user ? (
             <>
-              <Link to="/cart">Koszyk</Link>
+              <Link to="/cart" style={{ 
+                position: 'relative', 
+                paddingRight: cartCount > 0 ? '30px' : '0', 
+                display: 'inline-flex', 
+                alignItems: 'center' 
+              }}>
+                Koszyk
+                {cartCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '0',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '2px 6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    minWidth: '20px',
+                    textAlign: 'center'
+                  }}>
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
               <Link to="/notifications" style={{ 
                 position: 'relative', 
                 paddingRight: unreadCount > 0 ? '30px' : '0', 
@@ -250,7 +306,32 @@ export default function Navbar({ user, onLogout }) {
             </>
           ) : (
             <>
-              <Link to="/cart">Koszyk</Link>
+              <Link to="/cart" style={{ 
+                position: 'relative', 
+                paddingRight: cartCount > 0 ? '30px' : '0', 
+                display: 'inline-flex', 
+                alignItems: 'center' 
+              }}>
+                Koszyk
+                {cartCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '0',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '2px 6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    minWidth: '20px',
+                    textAlign: 'center'
+                  }}>
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
               <Link to="/login" className="btn-login">Zaloguj się</Link>
             </>
           )}

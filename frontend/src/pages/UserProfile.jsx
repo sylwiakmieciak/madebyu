@@ -11,6 +11,16 @@ export default function UserProfile() {
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     loadUserProfile();
@@ -74,7 +84,11 @@ export default function UserProfile() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : '350px 1fr', 
+        gap: '2rem' 
+      }}>
         
         {/* LEWA KOLUMNA - Profil */}
         <div>
@@ -83,7 +97,7 @@ export default function UserProfile() {
             borderRadius: '12px',
             padding: '2rem',
             border: '1px solid var(--border-color)',
-            position: 'sticky',
+            position: isMobile ? 'static' : 'sticky',
             top: '2rem'
           }}>
             {/* Avatar */}
@@ -326,11 +340,15 @@ export default function UserProfile() {
               <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem' }}>
                 Inne ogłoszenia tego sprzedawcy
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', 
+                gap: '1.5rem' 
+              }}>
                 {products.slice(0, 6).map(product => (
                   <div
                     key={product.id}
-                    onClick={() => navigate(`/products/${product.id}`)}
+                    onClick={() => navigate(`/product/${product.id}`)}
                     style={{
                       background: 'white',
                       borderRadius: '12px',

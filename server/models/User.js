@@ -31,6 +31,14 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(255),
     allowNull: true
   },
+  first_name: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  last_name: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   avatar_url: {
     type: DataTypes.STRING(500),
     allowNull: true

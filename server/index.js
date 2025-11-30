@@ -10,6 +10,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { syncDatabase } = require('./models');
+const sequelize = require('./config/database');
 const passport = require('./config/passport');
 
 const app = express();
@@ -19,7 +20,7 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARE
 // ============================================
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
 }));
 app.use(express.json());
@@ -63,6 +64,7 @@ const reviewRoutes = require('./routes/reviews');
 const moderationRoutes = require('./routes/moderation');
 const adminRoutes = require('./routes/admin');
 const commentRoutes = require('./routes/comments');
+const sliderRoutes = require('./routes/sliders');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -75,6 +77,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/moderation', moderationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/sliders', sliderRoutes);
 
 // ============================================
 // HEALTH CHECK
@@ -130,5 +133,25 @@ app.listen(PORT, async () => {
   } catch (error) {
     // Kolumna już istnieje
     console.log('[INFO] Notifications table already up to date');
+  }
+
+  // Dodaj kolumny first_name i last_name do users jeśli nie istnieją
+  try {
+    // Sprawdź czy kolumny istnieją
+    const [columns] = await sequelize.query(`SHOW COLUMNS FROM users LIKE 'first_name'`);
+    
+    if (columns.length === 0) {
+      // Dodaj kolumny
+      await sequelize.query(`
+        ALTER TABLE users 
+        ADD COLUMN first_name VARCHAR(100) NULL AFTER full_name,
+        ADD COLUMN last_name VARCHAR(100) NULL AFTER first_name;
+      `);
+      console.log('[OK] Users table updated with first_name and last_name');
+    } else {
+      console.log('[INFO] Users first_name/last_name columns already exist');
+    }
+  } catch (error) {
+    console.error('[ERROR] Failed to add first_name/last_name columns:', error.message);
   }
 });

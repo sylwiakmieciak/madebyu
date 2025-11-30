@@ -609,5 +609,136 @@ router.get('/my-purchases', authMiddleware, async (req, res) => {
   }
 });
 
+// ============================================
+// GET /api/orders/admin/all - Wszystkie zamówienia (admin/moderator)
+// ============================================
+router.get('/admin/all', authMiddleware, async (req, res) => {
+  try {
+    // Sprawdź uprawnienia
+    if (req.user.role !== 'admin' && !req.user.can_moderate_products) {
+      return res.status(403).json({ error: 'Brak uprawnień' });
+    }
+
+    const orders = await Order.findAll({
+      include: [
+        {
+          model: User,
+          as: 'buyer',
+          attributes: ['id', 'username', 'email', 'full_name']
+        },
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            {
+              model: Product,
+              as: 'product',
+              attributes: ['id', 'title', 'slug'],
+              include: [
+                {
+                  model: ProductImage,
+                  as: 'images',
+                  where: { is_primary: true },
+                  required: false,
+                  attributes: ['image_url']
+                }
+              ]
+            },
+            {
+              model: User,
+              as: 'seller',
+              attributes: ['id', 'username', 'full_name']
+            }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.json({ orders });
+
+  } catch (error) {
+    console.error('Get all orders error:', error);
+    res.status(500).json({ error: 'Nie udało się pobrać zamówień' });
+  }
+});
+
+// ============================================
+// PUT /api/orders/admin/:id/status - Zmień status zamówienia (admin/moderator)
+// ============================================
+router.put('/admin/:id/status', authMiddleware, async (req, res) => {
+  try {
+    // Sprawdź uprawnienia
+    if (req.user.role !== 'admin' && !req.user.can_moderate_products) {
+      return res.status(403).json({ error: 'Brak uprawnień' });
+    }
+
+    const { status, payment_status } = req.body;
+
+    // Walidacja statusów
+    const validOrderStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
+
+    if (status && !validOrderStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Nieprawidłowy status zamówienia' });
+    }
+
+    if (payment_status && !validPaymentStatuses.includes(payment_status)) {
+      return res.status(400).json({ error: 'Nieprawidłowy status płatności' });
+    }
+
+    const order = await Order.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'buyer',
+          attributes: ['id', 'username', 'email']
+        }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Zamówienie nie znalezione' });
+    }
+
+    const oldStatus = order.status;
+    const oldPaymentStatus = order.payment_status;
+
+    // Zaktualizuj statusy
+    if (status) order.status = status;
+    if (payment_status) order.payment_status = payment_status;
+    
+    await order.save();
+
+    // Wyślij powiadomienie kupującemu o zmianie statusu
+    if (status && status !== oldStatus) {
+      const statusMessages = {
+        'pending': 'w trakcie przetwarzania',
+        'confirmed': 'zostało potwierdzone',
+        'shipped': 'zostało wysłane',
+        'delivered': 'zostało dostarczone',
+        'cancelled': 'zostało anulowane'
+      };
+
+      await Notification.create({
+        user_id: order.buyer_id,
+        type: 'order_status_changed',
+        title: 'Zmiana statusu zamówienia',
+        message: `Twoje zamówienie ${order.order_number} ${statusMessages[status]}`,
+        order_id: order.id
+      });
+    }
+
+    res.json({ 
+      message: 'Status zamówienia zaktualizowany',
+      order 
+    });
+
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ error: 'Nie udało się zaktualizować statusu' });
+  }
+});
+
 module.exports = router;
 
