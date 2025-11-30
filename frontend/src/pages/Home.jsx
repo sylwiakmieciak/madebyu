@@ -176,7 +176,10 @@ export default function Home() {
                     {/* Product Info - Pod zdjęciem */}
                     <div style={{
                       padding: '1.5rem',
-                      backgroundColor: 'white'
+                      backgroundColor: 'white',
+                      height: '280px',
+                      display: 'flex',
+                      flexDirection: 'column'
                     }}>
                       <h3 style={{
                         fontSize: '1.25rem',
@@ -189,11 +192,32 @@ export default function Home() {
                       }}>
                         {product.title}
                       </h3>
+                      
+                      {/* Opis produktu - scrollowalny */}
+                      <div 
+                        style={{
+                          fontSize: '0.875rem',
+                          color: '#666',
+                          marginBottom: '0.75rem',
+                          overflowY: 'auto',
+                          lineHeight: '1.5',
+                          height: '80px',
+                          flexShrink: 0,
+                          paddingRight: '0.5rem',
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: 'var(--primary-color) #f0f0f0'
+                        }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: product.description || 'Brak opisu' 
+                        }}
+                      />
+                      
                       <p style={{
                         fontSize: '1.75rem',
                         fontWeight: 700,
                         color: 'var(--primary-color)',
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.5rem',
+                        flexShrink: 0
                       }}>
                         {product.price} zł
                       </p>
@@ -203,7 +227,8 @@ export default function Home() {
                         marginBottom: '1rem',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                       }}>
                         Sprzedawca: {product.seller?.username}
                       </p>
@@ -222,7 +247,8 @@ export default function Home() {
                           fontSize: '0.95rem',
                           fontWeight: 600,
                           cursor: 'pointer',
-                          transition: 'all 0.3s ease'
+                          transition: 'all 0.3s ease',
+                          marginTop: 'auto'
                         }}
                         onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
                         onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
