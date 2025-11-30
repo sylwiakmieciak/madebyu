@@ -192,23 +192,27 @@ export default function Notifications() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: { text: 'Oczekuje', color: '#ffa500' },
-      confirmed: { text: 'Potwierdzone', color: '#2196f3' },
-      shipped: { text: 'Wysłane', color: '#4caf50' },
-      delivered: { text: 'Dostarczone', color: '#8bc34a' },
-      cancelled: { text: 'Anulowane', color: '#f44336' }
+      pending: { text: 'Oczekuje', color: '#f59e0b', description: 'Zamówienie oczekuje na płatność/wysyłkę' },
+      confirmed: { text: 'Potwierdzone', color: '#3b82f6', description: 'Opłacone, czeka na wysyłkę' },
+      shipped: { text: 'Wysłane', color: '#8b5cf6', description: 'W drodze do Ciebie' },
+      delivered: { text: 'Dostarczone', color: '#10b981', description: 'Zamówienie dotarło' },
+      cancelled: { text: 'Anulowane', color: '#ef4444', description: 'Zamówienie anulowane' }
     };
     
     const badge = badges[status] || badges.pending;
     return (
-      <span style={{
-        padding: '0.25rem 0.75rem',
-        background: badge.color,
-        color: 'white',
-        borderRadius: '12px',
-        fontSize: '0.85rem',
-        fontWeight: 600
-      }}>
+      <span 
+        style={{
+          padding: '0.25rem 0.75rem',
+          background: badge.color,
+          color: 'white',
+          borderRadius: '12px',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          cursor: 'help'
+        }}
+        title={badge.description}
+      >
         {badge.text}
       </span>
     );
@@ -256,7 +260,7 @@ export default function Notifications() {
             fontSize: '1rem'
           }}
         >
-          Zamówienia do wysyłki ({salesOrders.filter(o => o.status === 'pending').length})
+          Moja sprzedaż ({salesOrders.filter(o => o.payment_status === 'paid').length})
         </button>
         <button
           onClick={() => setActiveTab('my-orders')}
@@ -348,13 +352,43 @@ export default function Notifications() {
       {/* Zamówienia Tab */}
       {activeTab === 'orders' && (
         <div>
-          {salesOrders.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--text-light)', padding: '3rem' }}>
-              Brak zamówień do wysyłki
+          <div style={{ 
+            background: 'var(--bg-light)', 
+            padding: '20px', 
+            borderRadius: '10px',
+            marginBottom: '20px',
+            border: '1px solid var(--border-color)'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>📦 Moja sprzedaż</h3>
+            <p style={{ margin: 0, color: '#666' }}>
+              Łącznie <strong>{salesOrders.filter(o => o.payment_status === 'paid').length}</strong> opłaconych zamówień
+              {' | '}
+              <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
+                {salesOrders.filter(o => o.payment_status === 'paid' && (o.status === 'pending' || o.status === 'confirmed')).length}
+              </span> do wysyłki
             </p>
+          </div>
+
+          {salesOrders.filter(o => o.payment_status === 'paid').length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              backgroundColor: 'var(--bg-cream)',
+              borderRadius: '12px'
+            }}>
+              <p style={{ color: 'var(--text-light)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                Brak sprzedanych produktów
+              </p>
+              <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                Zamówienia pojawią się tutaj po dokonaniu zakupu przez kupujących
+              </p>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {salesOrders.map(order => (
+              {salesOrders
+                .filter(o => o.payment_status === 'paid')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map(order => (
                 <div
                   key={order.id}
                   style={{
@@ -374,6 +408,18 @@ export default function Notifications() {
                       </p>
                       <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>
                         Data: {new Date(order.created_at).toLocaleString('pl-PL')}
+                      </p>
+                      <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        <span style={{
+                          padding: '0.25rem 0.75rem',
+                          background: '#d1fae5',
+                          color: '#065f46',
+                          borderRadius: '12px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          ✓ Opłacone
+                        </span>
                       </p>
                     </div>
                     {getStatusBadge(order.status)}
@@ -434,24 +480,43 @@ export default function Notifications() {
                     ))}
                   </div>
 
-                  {/* Przycisk wysyłki */}
-                  {order.status === 'pending' && (
+                  {/* Przycisk wysyłki lub info o statusie */}
+                  {(order.status === 'pending' || order.status === 'confirmed') && order.payment_status === 'paid' ? (
                     <button
                       onClick={() => handleShipOrder(order.id)}
                       style={{
                         width: '100%',
                         padding: '1rem',
-                        background: 'var(--success-color)',
+                        background: 'var(--primary-color)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '1rem',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 12px var(--shadow-soft)'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'var(--primary-dark)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'var(--primary-color)';
+                      }}
+                    >
+                      📦 Potwierdź wysyłkę
+                    </button>
+                  ) : (
+                    <div style={{
+                      padding: '1rem',
+                      background: order.status === 'shipped' ? '#fef3c7' : '#d1fae5',
+                      color: order.status === 'shipped' ? '#92400e' : '#065f46',
+                      borderRadius: '8px',
+                      textAlign: 'center',
                       fontWeight: 600
-                    }}
-                  >
-                    Potwierdź wysyłkę
-                  </button>
+                    }}>
+                      {order.status === 'shipped' && '🚚 Zamówienie w drodze do kupującego'}
+                      {order.status === 'delivered' && '✅ Zamówienie dostarczone'}
+                    </div>
                   )}
                 </div>
               ))}
@@ -480,26 +545,53 @@ export default function Notifications() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <h3 style={{ marginBottom: '0.5rem' }}>
                         Zamówienie #{order.order_number}
                       </h3>
                       <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>
                         Data: {new Date(order.created_at).toLocaleString('pl-PL')}
                       </p>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>
                         Suma: {order.total_amount} zł
                       </p>
-                      <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                        Status płatności: <span style={{ 
-                          fontWeight: 600,
-                          color: order.payment_status === 'paid' ? '#10b981' : order.payment_status === 'pending' ? '#f59e0b' : '#ef4444'
-                        }}>
-                          {order.payment_status === 'paid' ? 'Opłacone' : order.payment_status === 'pending' ? 'Oczekuje na płatność' : 'Błąd płatności'}
-                        </span>
-                      </p>
+                      
+                      {/* Status tracking */}
+                      <div style={{ 
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        background: 'var(--bg-light)',
+                        borderRadius: '8px',
+                        border: `2px solid ${
+                          order.payment_status === 'paid' ? '#10b981' : 
+                          order.payment_status === 'pending' ? '#f59e0b' : '#ef4444'
+                        }`
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ fontSize: '1.2rem' }}>
+                            {order.payment_status === 'paid' ? '✓' : order.payment_status === 'pending' ? '⏳' : '✕'}
+                          </span>
+                          <span style={{ 
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            color: order.payment_status === 'paid' ? '#10b981' : order.payment_status === 'pending' ? '#f59e0b' : '#ef4444'
+                          }}>
+                            {order.payment_status === 'paid' ? 'Opłacone' : order.payment_status === 'pending' ? 'Oczekuje na płatność' : 'Błąd płatności'}
+                          </span>
+                        </div>
+                        
+                        {order.payment_status === 'paid' && (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>
+                            {order.status === 'confirmed' && '📦 Przygotowywane do wysyłki'}
+                            {order.status === 'shipped' && '🚚 W drodze do Ciebie'}
+                            {order.status === 'delivered' && '✓ Dostarczone'}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {getStatusBadge(order.status)}
+                    <div style={{ marginLeft: '1rem' }}>
+                      {getStatusBadge(order.status)}
+                    </div>
                   </div>
 
                   {/* Produkty */}
@@ -543,7 +635,7 @@ export default function Notifications() {
                   {/* Przyciski akcji */}
                   <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                     {/* Przycisk płatności dla zamówień pending */}
-                    {order.payment_status === 'pending' && (
+                    {order.payment_status === 'pending' && order.status === 'pending' && (
                       <button
                         onClick={async () => {
                           try {
@@ -571,20 +663,20 @@ export default function Notifications() {
                         style={{
                           flex: '1 1 100%',
                           padding: '1.25rem',
-                          background: '#3b82f6',
+                          background: 'var(--primary-color)',
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
                           cursor: 'pointer',
                           fontSize: '1.1rem',
                           fontWeight: 700,
-                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                          boxShadow: '0 4px 12px var(--shadow-soft)'
                         }}
                         onMouseOver={(e) => {
-                          e.currentTarget.style.background = '#2563eb';
+                          e.currentTarget.style.background = 'var(--primary-dark)';
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.background = '#3b82f6';
+                          e.currentTarget.style.background = 'var(--primary-color)';
                         }}
                       >
                         💳 Zapłać teraz ({parseFloat(order.total_amount).toFixed(2)} zł)

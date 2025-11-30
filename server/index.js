@@ -73,6 +73,7 @@ const adminRoutes = require('./routes/admin');
 const commentRoutes = require('./routes/comments');
 const sliderRoutes = require('./routes/sliders');
 const paymentRoutes = require('./routes/payments');
+const cartRoutes = require('./routes/cart');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -87,6 +88,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/sliders', sliderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/cart', cartRoutes);
 
 // ============================================
 // HEALTH CHECK

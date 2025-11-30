@@ -9,7 +9,50 @@ export default function Cart() {
 
   useEffect(() => {
     loadCart();
+    syncCartWithBackend();
   }, []);
+
+  const syncCartWithBackend = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return; // Nie zalogowany - używaj tylko localStorage
+
+    try {
+      // Pobierz koszyk z backendu
+      const response = await fetch('http://localhost:3001/api/cart', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const backendCart = data.cart || [];
+
+        // Pobierz lokalny koszyk
+        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        if (localCart.length > 0 && backendCart.length === 0) {
+          // Jeśli mamy produkty lokalnie ale nie w bazie - wyślij do bazy
+          await fetch('http://localhost:3001/api/cart/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ cart: localCart })
+          });
+        } else if (backendCart.length > 0) {
+          // Jeśli są produkty w bazie - użyj ich
+          setCart(backendCart);
+          localStorage.setItem('cart', JSON.stringify(backendCart));
+          window.dispatchEvent(new Event('cartUpdated'));
+        }
+      }
+    } catch (error) {
+      console.error('Cart sync error:', error);
+      // W przypadku błędu używaj lokalnego koszyka
+    }
+  };
 
   const loadCart = () => {
     const savedCart = localStorage.getItem('cart');
@@ -18,7 +61,7 @@ export default function Cart() {
     }
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
     
     const updatedCart = cart.map(item => 
@@ -28,13 +71,45 @@ export default function Cart() {
     setCart(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
     window.dispatchEvent(new Event('cartUpdated'));
+
+    // Aktualizuj backend jeśli zalogowany
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await fetch(`http://localhost:3001/api/cart/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ quantity: newQuantity })
+        });
+      } catch (error) {
+        console.error('Update cart backend error:', error);
+      }
+    }
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = async (productId) => {
     const updatedCart = cart.filter(item => item.id !== productId);
     setCart(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
     window.dispatchEvent(new Event('cartUpdated'));
+
+    // Aktualizuj backend jeśli zalogowany
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await fetch(`http://localhost:3001/api/cart/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Remove from cart backend error:', error);
+      }
+    }
   };
 
   const getTotalPrice = () => {
@@ -108,9 +183,12 @@ export default function Cart() {
             {/* Info */}
             <div>
               <h3 style={{ marginBottom: '0.5rem' }}>{item.title}</h3>
-              <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                {item.description?.substring(0, 100)}...
-              </p>
+              <div 
+                style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginBottom: '1rem' }}
+                dangerouslySetInnerHTML={{ 
+                  __html: item.description?.substring(0, 150) + '...' || '' 
+                }}
+              />
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <span style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--primary-color)' }}>

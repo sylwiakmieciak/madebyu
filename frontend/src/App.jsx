@@ -174,6 +174,10 @@ function App() {
     authAPI.logout();
     setUser(null);
     
+    // Wyczyść koszyk przy wylogowaniu
+    localStorage.removeItem('cart');
+    window.dispatchEvent(new Event('cartUpdated'));
+    
     // Zaladuj domyslny motyw po wylogowaniu
     await loadDefaultTheme();
     

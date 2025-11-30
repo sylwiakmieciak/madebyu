@@ -217,7 +217,7 @@ export default function ProductDetails({ user }) {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     // Pobierz istniejący koszyk
     const savedCart = localStorage.getItem('cart');
     const cart = savedCart ? JSON.parse(savedCart) : [];
@@ -247,6 +247,24 @@ export default function ProductDetails({ user }) {
     // Zapisz koszyk
     localStorage.setItem('cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
+
+    // Synchronizuj z backendem jeśli zalogowany
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const productToAdd = cart.find(item => item.id === product.id);
+        await fetch(`http://localhost:3001/api/cart/${product.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ quantity: productToAdd.quantity })
+        });
+      } catch (error) {
+        console.error('Add to cart backend error:', error);
+      }
+    }
     
     // Pokaż komunikat
     alert('Produkt dodany do koszyka!');
