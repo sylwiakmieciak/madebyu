@@ -78,7 +78,7 @@ router.put('/users/:id/moderator', authMiddleware, adminMiddleware, async (req, 
 router.put('/users/:id/permissions', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { can_moderate_products, can_moderate_comments, can_manage_themes } = req.body;
+    const { can_moderate_products, can_moderate_comments, can_manage_themes, moderation_categories } = req.body;
     
     const user = await User.findByPk(id);
     
@@ -93,7 +93,8 @@ router.put('/users/:id/permissions', authMiddleware, adminMiddleware, async (req
     await user.update({
       can_moderate_products: can_moderate_products || false,
       can_moderate_comments: can_moderate_comments || false,
-      can_manage_themes: can_manage_themes || false
+      can_manage_themes: can_manage_themes || false,
+      moderation_categories: moderation_categories || []
     });
     
     res.json({ 

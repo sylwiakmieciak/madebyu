@@ -3,6 +3,7 @@
 const express = require('express');
 const { Product, User, Category, ProductImage, Notification } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/products', authMiddleware, moderatorMiddleware, async (req, res) =>
     
     // Jeśli użytkownik jest moderatorem (nie adminem), pokaż tylko produkty z jego kategorii
     if (req.user.role !== 'admin' && req.user.moderation_categories && req.user.moderation_categories.length > 0) {
-      where.category_id = req.user.moderation_categories;
+      where.category_id = { [Op.in]: req.user.moderation_categories };
     }
     
     const products = await Product.findAll({
@@ -176,7 +177,7 @@ router.get('/stats', authMiddleware, moderatorMiddleware, async (req, res) => {
     
     // Filtruj po kategoriach moderatora
     if (req.user.role !== 'admin' && req.user.moderation_categories && req.user.moderation_categories.length > 0) {
-      where.category_id = req.user.moderation_categories;
+      where.category_id = { [Op.in]: req.user.moderation_categories };
     }
     
     const pending = await Product.count({ where: { ...where, moderation_status: 'pending' } });

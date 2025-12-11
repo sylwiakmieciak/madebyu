@@ -128,7 +128,16 @@ router.post('/login', async (req, res) => {
 
     // Stwórz token JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, username: user.username, role: user.role },
+      { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username, 
+        role: user.role,
+        can_moderate_products: user.can_moderate_products,
+        can_moderate_comments: user.can_moderate_comments,
+        can_manage_themes: user.can_manage_themes,
+        moderation_categories: user.moderation_categories
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -162,6 +171,7 @@ router.get('/me', authMiddleware, async (req, res) => {
       attributes: [
         'id', 'username', 'email', 'role', 'full_name', 'avatar_url', 'bio', 'greeting',
         'can_moderate_products', 'can_moderate_comments', 'can_manage_themes',
+        'moderation_categories',
         'created_at'
       ]
     });
@@ -305,7 +315,11 @@ router.get('/google/callback',
           id: req.user.id, 
           email: req.user.email, 
           username: req.user.username, 
-          role: req.user.role 
+          role: req.user.role,
+          can_moderate_products: req.user.can_moderate_products,
+          can_moderate_comments: req.user.can_moderate_comments,
+          can_manage_themes: req.user.can_manage_themes,
+          moderation_categories: req.user.moderation_categories
         },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
@@ -345,7 +359,11 @@ router.get('/github/callback',
           id: req.user.id, 
           email: req.user.email, 
           username: req.user.username, 
-          role: req.user.role 
+          role: req.user.role,
+          can_moderate_products: req.user.can_moderate_products,
+          can_moderate_comments: req.user.can_moderate_comments,
+          can_manage_themes: req.user.can_manage_themes,
+          moderation_categories: req.user.moderation_categories
         },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }

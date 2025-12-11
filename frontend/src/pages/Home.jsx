@@ -8,8 +8,10 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(3);
+  const [maxDescHeight, setMaxDescHeight] = useState(80);
   const sliderRef = useRef(null);
   const autoPlayRef = useRef(null);
+  const descRefs = useRef([]);
 
   useEffect(() => {
     loadCategories();
@@ -18,6 +20,18 @@ export default function Home() {
     window.addEventListener('resize', updateSlidesPerView);
     return () => window.removeEventListener('resize', updateSlidesPerView);
   }, []);
+
+  useEffect(() => {
+    if (featuredProducts.length > 0 && descRefs.current.length > 0) {
+      const heights = descRefs.current
+        .filter(ref => ref !== null)
+        .map(ref => ref.scrollHeight);
+      if (heights.length > 0) {
+        const maxHeight = Math.max(...heights);
+        setMaxDescHeight(maxHeight);
+      }
+    }
+  }, [featuredProducts]);
 
   useEffect(() => {
     // Auto-play slider - powoli przesuwaj w lewo
@@ -173,13 +187,12 @@ export default function Home() {
                       }}>Wybór Redakcji</span>
                     </div>
                     
-                    {/* Product Info - Pod zdjęciem */}
                     <div style={{
                       padding: '1.5rem',
                       backgroundColor: 'white',
-                      height: '280px',
                       display: 'flex',
-                      flexDirection: 'column'
+                      flexDirection: 'column',
+                      minHeight: 'fit-content'
                     }}>
                       <h3 style={{
                         fontSize: '1.25rem',
@@ -193,19 +206,16 @@ export default function Home() {
                         {product.title}
                       </h3>
                       
-                      {/* Opis produktu - scrollowalny */}
                       <div 
+                        ref={(el) => descRefs.current[product.id] = el}
                         style={{
                           fontSize: '0.875rem',
                           color: '#666',
                           marginBottom: '0.75rem',
-                          overflowY: 'auto',
                           lineHeight: '1.5',
-                          height: '80px',
+                          height: `${maxDescHeight}px`,
                           flexShrink: 0,
-                          paddingRight: '0.5rem',
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: 'var(--primary-color) #f0f0f0'
+                          overflow: 'hidden'
                         }}
                         dangerouslySetInnerHTML={{ 
                           __html: product.description || 'Brak opisu' 

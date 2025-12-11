@@ -4190,6 +4190,7 @@ export default function Dashboard({ user, refreshUser }) {
                     <th style={{ padding: '1rem', textAlign: 'center' }}>Ogłoszenia</th>
                     <th style={{ padding: '1rem', textAlign: 'center' }}>Komentarze</th>
                     <th style={{ padding: '1rem', textAlign: 'center' }}>Motywy</th>
+                    <th style={{ padding: '1rem', textAlign: 'left' }}>Kategorie</th>
                     <th style={{ padding: '1rem', textAlign: 'center' }}>Akcje</th>
                   </tr>
                 </thead>
@@ -4203,10 +4204,10 @@ export default function Dashboard({ user, refreshUser }) {
                           padding: '0.25rem 0.75rem',
                           borderRadius: '12px',
                           fontSize: '0.85rem',
-                          backgroundColor: u.role === 'admin' ? '#8b5cf6' : '#e0e7ff',
-                          color: u.role === 'admin' ? 'white' : '#4c1d95'
+                          backgroundColor: u.role === 'admin' ? '#8b5cf6' : (u.can_moderate_products || u.can_moderate_comments || u.can_manage_themes) ? '#3b82f6' : '#e0e7ff',
+                          color: u.role === 'admin' || u.can_moderate_products || u.can_moderate_comments || u.can_manage_themes ? 'white' : '#4c1d95'
                         }}>
-                          {u.role === 'admin' ? 'Admin' : 'User'}
+                          {u.role === 'admin' ? 'Admin' : (u.can_moderate_products || u.can_moderate_comments || u.can_manage_themes) ? 'Moderator' : 'User'}
                         </span>
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
@@ -4218,18 +4219,37 @@ export default function Dashboard({ user, refreshUser }) {
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
                         {u.role === 'admin' || u.can_manage_themes ? '✓' : '—'}
                       </td>
+                      <td style={{ padding: '1rem' }}>
+                        {(u.can_moderate_products || u.can_moderate_comments || u.can_manage_themes) ? (
+                          u.moderation_categories && u.moderation_categories.length > 0 ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>
+                              {u.moderation_categories.length} {u.moderation_categories.length === 1 ? 'kategoria' : 'kategorii'}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>Wszystkie</span>
+                          )
+                        ) : (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>—</span>
+                        )}
+                      </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
                         {u.role !== 'admin' && (
                           <button
                             onClick={() => {
-                              setSelectedUser(u);
+                              setSelectedUser({
+                                ...u,
+                                moderation_categories: Array.isArray(u.moderation_categories) ? u.moderation_categories : []
+                              });
                             }}
-                            className="btn"
                             style={{
                               padding: '0.5rem 1rem',
                               fontSize: '0.85rem',
-                              backgroundColor: 'var(--accent-purple)',
-                              color: 'white'
+                              backgroundColor: '#8b5cf6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: 600
                             }}
                           >
                             Uprawnienia
@@ -4371,6 +4391,46 @@ export default function Dashboard({ user, refreshUser }) {
                   </div>
                 </div>
 
+                {(selectedUser.can_moderate_products || selectedUser.can_moderate_comments) && (
+                  <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-light)', borderRadius: '8px' }}>
+                    <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>
+                      📁 Kategorie do moderacji
+                    </h4>
+                    <p style={{ marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-light)' }}>
+                      Wybierz kategorie, którymi moderator będzie się zajmował. Jeśli nie wybierzesz żadnych, moderator będzie miał dostęp do wszystkich kategorii.
+                    </p>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {allCategories.filter(cat => !cat.parent_id).map(category => (
+                        <label key={category.id} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.5rem',
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'white'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(selectedUser.moderation_categories || []).includes(category.id)}
+                            onChange={(e) => {
+                              const current = selectedUser.moderation_categories || [];
+                              const updated = e.target.checked
+                                ? [...current, category.id]
+                                : current.filter(id => id !== category.id);
+                              setSelectedUser({...selectedUser, moderation_categories: updated});
+                            }}
+                          />
+                          <span style={{ fontSize: '0.9rem' }}>{category.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                   <button
                     onClick={() => { setSelectedUser(null); }}
@@ -4392,7 +4452,8 @@ export default function Dashboard({ user, refreshUser }) {
                           body: JSON.stringify({
                             can_moderate_products: selectedUser.can_moderate_products,
                             can_moderate_comments: selectedUser.can_moderate_comments,
-                            can_manage_themes: selectedUser.can_manage_themes
+                            can_manage_themes: selectedUser.can_manage_themes,
+                            moderation_categories: selectedUser.moderation_categories || []
                           })
                         });
 
